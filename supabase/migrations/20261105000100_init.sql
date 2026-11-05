@@ -217,6 +217,7 @@ language plpgsql
 as $$
 begin
   new.server_updated_at := now();
+  new.updated_at := now();
 
   if tg_op = 'UPDATE' then
     new.revision := old.revision + 1;
@@ -349,13 +350,33 @@ create policy "tasks_select_own"
 drop policy if exists "tasks_insert_own" on public.tasks;
 create policy "tasks_insert_own"
   on public.tasks for insert to authenticated
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and (
+      category_id is null
+      or exists (
+        select 1
+        from public.categories c
+        where c.id = category_id and c.user_id = auth.uid()
+      )
+    )
+  );
 
 drop policy if exists "tasks_update_own" on public.tasks;
 create policy "tasks_update_own"
   on public.tasks for update to authenticated
   using (user_id = auth.uid())
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and (
+      category_id is null
+      or exists (
+        select 1
+        from public.categories c
+        where c.id = category_id and c.user_id = auth.uid()
+      )
+    )
+  );
 
 drop policy if exists "tasks_delete_own" on public.tasks;
 create policy "tasks_delete_own"
@@ -373,13 +394,27 @@ create policy "task_images_select_own"
 drop policy if exists "task_images_insert_own" on public.task_images;
 create policy "task_images_insert_own"
   on public.task_images for insert to authenticated
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1
+      from public.tasks t
+      where t.id = task_id and t.user_id = auth.uid()
+    )
+  );
 
 drop policy if exists "task_images_update_own" on public.task_images;
 create policy "task_images_update_own"
   on public.task_images for update to authenticated
   using (user_id = auth.uid())
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1
+      from public.tasks t
+      where t.id = task_id and t.user_id = auth.uid()
+    )
+  );
 
 drop policy if exists "task_images_delete_own" on public.task_images;
 create policy "task_images_delete_own"
@@ -397,7 +432,14 @@ create policy "task_events_select_own"
 drop policy if exists "task_events_insert_own" on public.task_events;
 create policy "task_events_insert_own"
   on public.task_events for insert to authenticated
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and exists (
+      select 1
+      from public.tasks t
+      where t.id = task_id and t.user_id = auth.uid()
+    )
+  );
 
 drop policy if exists "task_events_delete_own" on public.task_events;
 create policy "task_events_delete_own"
