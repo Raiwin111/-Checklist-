@@ -2,8 +2,21 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
 
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message: unknown }).message)
+  if (error && typeof error === 'object') {
+    const record = error as { message?: unknown; code?: unknown; details?: unknown }
+    const message =
+      typeof record.message === 'string' ? record.message : undefined
+
+    // 23503 = foreign_key_violation. The most likely cause here is a missing
+    // profile row, which makes tasks.user_id fail tasks_user_id_fkey.
+    if (
+      record.code === '23503' &&
+      (message ?? '').includes('tasks_user_id_fkey')
+    ) {
+      return 'บัญชีนี้ยังไม่มีข้อมูลโปรไฟล์ในฐานข้อมูล กรุณารัน migration 20261106000200_backfill_profiles.sql แล้วลองใหม่'
+    }
+
+    if (message) return message
   }
 
   return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'
