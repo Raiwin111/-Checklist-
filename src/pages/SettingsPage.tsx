@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Download,
+  FolderKanban,
   Languages,
+  Loader2,
   LogOut,
   Moon,
   ShieldAlert,
@@ -17,6 +19,11 @@ import {
   switchToAccount,
   type VaultAccount,
 } from '../features/auth/accountVault'
+import { useDashboard } from '../features/tasks/useDashboard'
+import { CategoryManager } from '../features/categories/CategoryManager'
+import { Modal } from '../components/Modal'
+import { deleteAccount } from '../lib/api/account'
+import { getErrorMessage } from '../lib/errors'
 
 const cardClass =
   'rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900'
@@ -30,6 +37,14 @@ export function SettingsPage() {
   )
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const { data: dashboard, loading: dashboardLoading } = useDashboard(user?.id)
+  const stats = dashboard?.stats
+
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -48,11 +63,7 @@ export function SettingsPage() {
       await switchToAccount(account.userId)
       window.location.assign('/')
     } catch (switchError) {
-      setError(
-        switchError instanceof Error
-          ? switchError.message
-          : 'สลับบัญชีไม่สำเร็จ',
-      )
+      setError(getErrorMessage(switchError))
       setBusyUserId(null)
     }
   }
@@ -61,6 +72,35 @@ export function SettingsPage() {
     removeAccountFromVault(userId)
     setAccounts(listAccounts())
   }
+
+  function openDelete() {
+    setDeleteConfirmText('')
+    setDeleteError(null)
+    setDeleteOpen(true)
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setDeleteError(null)
+
+    try {
+      await deleteAccount()
+      navigate('/login', { replace: true })
+    } catch (deleteFailure) {
+      setDeleteError(getErrorMessage(deleteFailure))
+      setDeleting(false)
+    }
+  }
+
+  const canDelete =
+    deleteConfirmText.trim().toLowerCase() === (user?.email ?? '').toLowerCase()
+
+  const statCards = [
+    ['งานทั้งหมด', stats?.total ?? 0],
+    ['เสร็จแล้ว', stats?.completed ?? 0],
+    ['กำลังทำ', stats?.inProgress ?? 0],
+    ['ยังไม่เริ่ม', stats?.notStarted ?? 0],
+  ] as const
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -144,6 +184,10 @@ export function SettingsPage() {
       </section>
 
       <section className={cardClass}>
+        {user ? <CategoryManager userId={user.id} /> : null}
+      </section>
+
+      <section className={cardClass}>
         <h2 className="text-sm font-semibold">General Settings</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -200,14 +244,17 @@ export function SettingsPage() {
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-sm font-semibold">System Information</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <FolderKanban className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            System Information
+          </h2>
+          {dashboardLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+          ) : null}
+        </div>
         <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            ['งานทั้งหมด', '0'],
-            ['เสร็จแล้ว', '0'],
-            ['กำลังทำ', '0'],
-            ['ยังไม่เริ่ม', '0'],
-          ].map(([label, value]) => (
+          {statCards.map(([label, value]) => (
             <div
               key={label}
               className="rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-950"
@@ -220,7 +267,8 @@ export function SettingsPage() {
           ))}
         </dl>
         <p className="mt-3 text-xs text-slate-400">
-          ตัวเลขจริงจะแสดงหลังเชื่อมต่อฐานข้อมูลใน Phase 3
+          ความคืบหน้าเฉลี่ย {stats?.averageProgress ?? 0}% · พักไว้{' '}
+          {stats?.onHold ?? 0} งาน
         </p>
       </section>
 
@@ -243,11 +291,11 @@ export function SettingsPage() {
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               การลบบัญชีจะลบ Task รูปภาพ ประวัติ และข้อมูลทั้งหมดอย่างถาวร
-              ระบบจะเปิดใช้งานหลังสร้าง Edge Function ใน Phase 3
+              ไม่สามารถกู้คืนได้
             </p>
             <button
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white opacity-50"
-              disabled
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500"
+              onClick={openDelete}
               type="button"
             >
               <Trash2 className="h-4 w-4" />
@@ -256,6 +304,61 @@ export function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <Modal
+        open={deleteOpen}
+        title="ลบบัญชีถาวร"
+        onClose={() => {
+          if (deleting) return
+          setDeleteOpen(false)
+        }}
+        footer={
+          <>
+            <button
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              disabled={deleting}
+              onClick={() => setDeleteOpen(false)}
+              type="button"
+            >
+              ยกเลิก
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canDelete || deleting}
+              onClick={() => void handleDeleteAccount()}
+              type="button"
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              {deleting ? 'กำลังลบ…' : 'ลบบัญชีถาวร'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            ข้อมูลทั้งหมดของคุณจะถูกลบอย่างถาวร พิมพ์อีเมล{' '}
+            <span className="font-semibold">{user?.email}</span>{' '}
+            เพื่อยืนยันการลบบัญชี
+          </p>
+          <input
+            aria-label="ยืนยันอีเมล"
+            autoComplete="off"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 dark:border-slate-700 dark:bg-slate-950"
+            placeholder={user?.email ?? ''}
+            value={deleteConfirmText}
+            onChange={(event) => setDeleteConfirmText(event.target.value)}
+          />
+          {deleteError ? (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {deleteError}
+            </p>
+          ) : null}
+        </div>
+      </Modal>
     </div>
   )
 }

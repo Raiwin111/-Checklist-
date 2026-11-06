@@ -10,6 +10,7 @@ import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AddTaskPage } from './pages/AddTaskPage'
 import { TasksPage } from './pages/TasksPage'
+import { TaskDetailPage } from './pages/TaskDetailPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -33,6 +34,7 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="tasks/new" element={<AddTaskPage />} />
           <Route path="tasks" element={<TasksPage />} />
+          <Route path="tasks/:id" element={<TaskDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
