@@ -23,7 +23,15 @@ export async function deleteAccount(): Promise<void> {
   if (error) {
     let message = error.message || 'ลบบัญชีไม่สำเร็จ'
     const context = (error as { context?: Response }).context
-    if (context) {
+    const status = context?.status
+
+    if (status === 404 || error.name === 'FunctionsFetchError') {
+      message =
+        'เชื่อมต่อ Edge Function "delete-account" ไม่ได้ — ยังไม่ได้ deploy หรือ deploy ไม่สำเร็จ ' +
+        'กรุณา deploy ฟังก์ชันนี้ใน Supabase Dashboard → Edge Functions แล้วลองใหม่'
+    }
+
+    if (context && status !== 404) {
       try {
         const body = (await context.clone().json()) as DeleteAccountResponse
         if (body?.error) message = body.error
@@ -31,6 +39,7 @@ export async function deleteAccount(): Promise<void> {
         // Keep the original error message when the body is not JSON.
       }
     }
+
     throw new Error(message)
   }
 
