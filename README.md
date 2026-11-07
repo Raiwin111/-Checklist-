@@ -85,9 +85,9 @@ npm run dev
 
 - [x] Phase 1 — Requirement & Architecture (อนุมัติแล้ว)
 - [x] Phase 2 — Project setup, Auth UI, Supabase client, Migration draft
-- [ ] Phase 3 — Core Task System
-- [ ] Phase 4 — UI & Settings (i18n, theme, export)
-- [ ] Phase 5 — Search + Rule-based classification
+- [x] Phase 3 — Core Task System
+- [x] Phase 4 — UI & Settings (i18n, theme, export)
+- [ ] Phase 5 — Search + Rule-based classification (โค้ดเสร็จ รอ deploy Edge Function)
 - [ ] Phase 6A — PWA + offline read cache
 - [ ] Phase 6B — Offline CRUD + sync (ต้องอนุมัติแยก)
 - [ ] Phase 7 — Testing & Deploy

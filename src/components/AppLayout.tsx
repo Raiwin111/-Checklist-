@@ -4,6 +4,7 @@ import {
   ListChecks,
   LogOut,
   PlusCircle,
+  Search,
   Settings,
 } from 'lucide-react'
 import { useAuth } from '../features/auth/auth-context'
@@ -20,6 +21,7 @@ const navItems: Array<{
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard, end: true },
   { to: '/tasks/new', labelKey: 'nav.addTask', icon: PlusCircle, end: false },
   { to: '/tasks', labelKey: 'nav.tasks', icon: ListChecks, end: true },
+  { to: '/search', labelKey: 'nav.search', icon: Search, end: false },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings, end: false },
 ]
 

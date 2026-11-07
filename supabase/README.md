@@ -86,7 +86,41 @@ supabase functions deploy delete-account
 หลัง deploy ให้ทดสอบด้วยบัญชีทดสอบ (ลบบัญชีถาวรในหน้า Settings)
 เพราะไม่สามารถกู้คืนได้
 
-## 6. Edge Function secrets (Phase 3 / 5)
+## 6. Deploy the `search` Edge Function (Phase 5)
+
+ไฟล์:
+
+- `supabase/functions/search/index.ts` — เรียก SerpAPI และตรวจ JWT
+- `supabase/functions/search/classifier.ts` — กฎจัดประเภทแหล่งข้อมูล (rule-based)
+
+**ต้องตั้ง secret ก่อน deploy:**
+
+```bash
+supabase secrets set SERPAPI_API_KEY=your-key
+```
+
+> ห้ามใส่คีย์นี้ใน `.env.local` ของ frontend เด็ดขาด
+
+**วิธีที่ 1 — ใช้ Supabase CLI**
+
+```bash
+supabase functions deploy search
+```
+
+**วิธีที่ 2 — ใช้ Dashboard**
+
+1. เปิด Supabase Dashboard → **Edge Functions**
+2. กด **Deploy a new function** ตั้งชื่อ `search`
+3. สร้างไฟล์ `index.ts` และ `classifier.ts` ให้ตรงกับในโฟลเดอร์
+   `supabase/functions/search/` (วางโค้ดทั้งไฟล์)
+4. กด **Deploy**
+5. ไปที่ **Edge Functions → search → Secrets** แล้วเพิ่ม `SERPAPI_API_KEY`
+
+หลัง deploy ให้ทดสอบค้นหาจากหน้า **ค้นหา** ในแอป:
+ผลลัพธ์ควรแสดงป้ายประเภท (วิชาการ / ข่าว / ราชการ / เอกสาร / บล็อก / ไม่ทราบ)
+และประวัติการค้นหาควรถูกบันทึกในตาราง `search_sessions` + `search_results`
+
+## 7. Edge Function secrets (Phase 3 / 5)
 
 ห้ามใส่ secret ใน `.env.local` ของ frontend
 
@@ -102,7 +136,7 @@ supabase/functions/.env
 
 ไฟล์นี้ถูก ignore โดย Git แล้ว
 
-## 7. ตรวจ RLS
+## 8. ตรวจ RLS
 
 ทดสอบด้วยบัญชี 2 บัญชี:
 
@@ -111,7 +145,7 @@ supabase/functions/.env
 3. Login บัญชี B แล้ว query `tasks` — ต้องไม่เห็นข้อมูลของ A
 4. พยายาม update/delete แถวของ A — ต้องถูกปฏิเสธ
 
-## 8. แก้ปัญหา
+## 9. แก้ปัญหา
 
 ### `insert or update on table "tasks" violates foreign key constraint "tasks_user_id_fkey"`
 
@@ -130,7 +164,23 @@ left join public.profiles p on p.id = u.id
 order by u.created_at;
 ```
 
-## 9. คำสั่งที่มีประโยชน์
+### หน้า "ค้นหา" แจ้งว่ายังไม่ได้ deploy Edge Function `search`
+
+สาเหตุ: ยังไม่มีฟังก์ชันชื่อ `search` ในโปรเจกต์ (หรือ deploy ไม่สำเร็จ)
+วิธีแก้: ทำตามหัวข้อ 6 แล้วลองค้นหาอีกครั้ง
+
+### ขึ้นว่า "ยังไม่ได้ตั้งค่า SERPAPI_API_KEY"
+
+สาเหตุ: ยังไม่ได้ตั้ง secret หรือตั้งในชื่ออื่น
+วิธีแก้: `supabase secrets set SERPAPI_API_KEY=your-key`
+(หรือเพิ่มใน Dashboard → Edge Functions → search → Secrets) แล้ว deploy ใหม่
+
+### ขึ้นว่า "ผู้ให้บริการค้นหาขัดข้อง"
+
+สาเหตุ: SerpAPI ตอบ error หรือหมด quota
+วิธีแก้: ตรวจ quota/คีย์ที่ https://serpapi.com/dashboard แล้วลองใหม่
+
+## 10. คำสั่งที่มีประโยชน์
 
 ```bash
 # ถ้าติดตั้ง Supabase CLI

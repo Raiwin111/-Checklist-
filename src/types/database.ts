@@ -18,6 +18,8 @@ export type SourceType =
 
 export type ClassificationMethod = 'rule_based' | 'ai' | 'manual' | 'unknown'
 
+export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown'
+
 export type TaskEventType =
   | 'created'
   | 'updated'
@@ -111,7 +113,7 @@ export type SearchResult = {
   summary: string | null
   classification_method: ClassificationMethod
   is_ai_generated: boolean
-  confidence: 'high' | 'medium' | 'low' | 'unknown'
+  confidence: ConfidenceLevel
   created_at: string
 }
 
