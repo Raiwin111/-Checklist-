@@ -1,5 +1,6 @@
 import { supabase } from '../supabase'
 import type { Category } from '../../types/database'
+import { assertOnline } from '../offline/network'
 
 export type CategoryInput = {
   nameTh: string
@@ -34,6 +35,8 @@ export async function createCategory(
   userId: string,
   input: CategoryInput,
 ): Promise<Category> {
+  assertOnline()
+
   const key = slugify(input.key || input.nameEn || input.nameTh) || 'custom'
   const { data, error } = await supabase
     .from('categories')
@@ -58,6 +61,8 @@ export async function updateCategory(
   id: string,
   input: Partial<CategoryInput>,
 ): Promise<Category> {
+  assertOnline()
+
   const patch: Record<string, unknown> = {}
 
   if (input.nameTh !== undefined) patch.name_th = input.nameTh.trim()
@@ -79,6 +84,8 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<void> {
+  assertOnline()
+
   const { error } = await supabase.from('categories').delete().eq('id', id)
   if (error) throw error
 }
@@ -100,6 +107,8 @@ export async function reassignTasks(
   fromCategoryId: string,
   toCategoryId: string | null,
 ): Promise<void> {
+  assertOnline()
+
   const { error } = await supabase
     .from('tasks')
     .update({ category_id: toCategoryId })

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
+import { AuthShell, primaryButtonClass } from './AuthShell'
+import { PasswordInput } from './PasswordInput'
 import { useAuth } from './auth-context'
 import { useI18n } from '../i18n/context'
 
@@ -70,10 +71,8 @@ export function ResetPasswordPage() {
           <label className="text-sm font-medium" htmlFor="password">
             {t('auth.newPassword')}
           </label>
-          <input
+          <PasswordInput
             id="password"
-            className={inputClass}
-            type="password"
             autoComplete="new-password"
             minLength={8}
             required
@@ -86,10 +85,8 @@ export function ResetPasswordPage() {
           <label className="text-sm font-medium" htmlFor="confirm-password">
             {t('auth.confirmNewPassword')}
           </label>
-          <input
+          <PasswordInput
             id="confirm-password"
-            className={inputClass}
-            type="password"
             autoComplete="new-password"
             minLength={8}
             required

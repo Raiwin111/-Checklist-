@@ -20,6 +20,7 @@ import { TaskForm, type TaskFormValues } from '../features/tasks/TaskForm'
 import { StatusBadge } from '../features/tasks/StatusBadge'
 import { ProgressBar } from '../features/tasks/ProgressBar'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { CacheNotice } from '../components/CacheNotice'
 import { updateTask, softDeleteTask } from '../lib/api/tasks'
 import { deleteTaskImage, uploadTaskImage } from '../lib/api/images'
 import { deleteTaskEvent, logTaskEvent } from '../lib/api/events'
@@ -35,7 +36,8 @@ export function TaskDetailPage() {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
-  const { task, events, loading, error, refresh } = useTaskDetail(id)
+  const { task, events, loading, error, refresh, fromCache, cachedAt } =
+    useTaskDetail(id, user?.id)
   const { categories } = useCategories(user?.id)
 
   const [editing, setEditing] = useState(
@@ -247,6 +249,8 @@ export function TaskDetailPage() {
 
   return (
     <div className="space-y-5">
+      {fromCache ? <CacheNotice cachedAt={cachedAt} /> : null}
+
       {warning ? (
         <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
           {warning}

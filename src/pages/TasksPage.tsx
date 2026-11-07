@@ -6,6 +6,7 @@ import { useTasks } from '../features/tasks/useTasks'
 import { useCategories } from '../features/tasks/useCategories'
 import { TaskCard } from '../features/tasks/TaskCard'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { CacheNotice } from '../components/CacheNotice'
 import {
   softDeleteTask,
   type TaskWithRelations,
@@ -28,7 +29,9 @@ const STATUS_OPTIONS: TaskStatus[] = [
 export function TasksPage() {
   const { user } = useAuth()
   const { t, locale } = useI18n()
-  const { tasks, loading, error, refresh } = useTasks(user?.id)
+  const { tasks, loading, error, refresh, fromCache, cachedAt } = useTasks(
+    user?.id,
+  )
   const { categories } = useCategories(user?.id)
 
   const [search, setSearch] = useState('')
@@ -78,6 +81,8 @@ export function TasksPage() {
 
   return (
     <div className="space-y-5">
+      {fromCache ? <CacheNotice cachedAt={cachedAt} /> : null}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>

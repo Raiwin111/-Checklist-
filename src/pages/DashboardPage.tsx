@@ -16,6 +16,7 @@ import { useDashboard } from '../features/tasks/useDashboard'
 import { describeEvent } from '../features/tasks/eventDetails'
 import { ProgressBar } from '../features/tasks/ProgressBar'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { CacheNotice } from '../components/CacheNotice'
 import { deleteTaskEvent } from '../lib/api/events'
 import type { TimelineEvent } from '../lib/api/tasks'
 import { getErrorMessage } from '../lib/errors'
@@ -25,7 +26,9 @@ import { useI18n } from '../features/i18n/context'
 export function DashboardPage() {
   const { user } = useAuth()
   const { t } = useI18n()
-  const { data, loading, error, refresh } = useDashboard(user?.id)
+  const { data, loading, error, refresh, fromCache, cachedAt } = useDashboard(
+    user?.id,
+  )
   const [eventToDelete, setEventToDelete] = useState<TimelineEvent | null>(null)
   const [deletingEvent, setDeletingEvent] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -86,6 +89,8 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {fromCache ? <CacheNotice cachedAt={cachedAt} /> : null}
+
       {error ? (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
           {error}

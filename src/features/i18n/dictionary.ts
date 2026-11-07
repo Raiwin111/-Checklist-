@@ -29,6 +29,16 @@ const th = {
   'error.imageUnsupported': 'เบราว์เซอร์ไม่รองรับการประมวลผลรูปภาพ',
   'error.imageCompress': 'ไม่สามารถบีบอัดรูปภาพได้',
 
+  'offline.badge': 'ออฟไลน์',
+  'offline.banner':
+    'โหมดออฟไลน์ — กำลังแสดงข้อมูลจากแคช และยังบันทึกการแก้ไขไม่ได้',
+  'offline.readOnly':
+    'โหมดออฟไลน์อ่านได้อย่างเดียว กรุณาเชื่อมต่ออินเทอร์เน็ตก่อนแก้ไขข้อมูล',
+  'offline.noCache':
+    'ไม่มีข้อมูลแคชสำหรับโหมดออฟไลน์ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วเปิดหน้านี้อีกครั้ง',
+  'offline.cachedAt': 'กำลังแสดงข้อมูลแคชเมื่อ {time}',
+  'offline.onlineBack': 'กลับมาออนไลน์แล้ว',
+
   'nav.dashboard': 'Dashboard',
   'nav.addTask': 'เพิ่ม Task',
   'nav.tasks': 'จัดการ Task',
@@ -260,6 +270,8 @@ const th = {
   'auth.loginSubtitle': 'จัดการงาน เรียน โปรเจกต์ และงานวิจัยของคุณ',
   'auth.email': 'อีเมล',
   'auth.password': 'รหัสผ่าน',
+  'auth.showPassword': 'แสดงรหัสผ่าน',
+  'auth.hidePassword': 'ซ่อนรหัสผ่าน',
   'auth.forgot': 'ลืมรหัสผ่าน?',
   'auth.signingIn': 'กำลังเข้าสู่ระบบ…',
   'auth.signIn': 'เข้าสู่ระบบ',
@@ -328,6 +340,16 @@ const en: { [K in keyof typeof th]: string } = {
   'error.imageTooLarge': 'Images must be 20MB or smaller',
   'error.imageUnsupported': 'This browser cannot process images',
   'error.imageCompress': 'Could not compress the image',
+
+  'offline.badge': 'Offline',
+  'offline.banner':
+    'Offline mode — showing cached data. Changes cannot be saved right now.',
+  'offline.readOnly':
+    'Offline mode is read-only. Connect to the internet before making changes.',
+  'offline.noCache':
+    'No cached data is available offline. Connect to the internet, then open this page again.',
+  'offline.cachedAt': 'Showing cached data from {time}',
+  'offline.onlineBack': 'Back online',
 
   'nav.dashboard': 'Dashboard',
   'nav.addTask': 'Add Task',
@@ -563,6 +585,8 @@ const en: { [K in keyof typeof th]: string } = {
   'auth.loginSubtitle': 'Manage your tasks, studies, projects and research',
   'auth.email': 'Email',
   'auth.password': 'Password',
+  'auth.showPassword': 'Show password',
+  'auth.hidePassword': 'Hide password',
   'auth.forgot': 'Forgot password?',
   'auth.signingIn': 'Signing in…',
   'auth.signIn': 'Sign in',

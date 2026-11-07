@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
+import { PasswordInput } from './PasswordInput'
 import { useAuth } from './auth-context'
 import { useI18n } from '../i18n/context'
 
@@ -73,10 +74,8 @@ export function LoginPage() {
               {t('auth.forgot')}
             </Link>
           </div>
-          <input
+          <PasswordInput
             id="password"
-            className={inputClass}
-            type="password"
             autoComplete="current-password"
             required
             value={password}

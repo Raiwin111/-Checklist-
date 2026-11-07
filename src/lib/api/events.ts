@@ -1,5 +1,6 @@
 import { supabase } from '../supabase'
 import type { TaskEventType } from '../../types/database'
+import { assertOnline } from '../offline/network'
 
 type LogTaskEventInput = {
   taskId: string
@@ -29,6 +30,8 @@ export async function logTaskEvent({
 }
 
 export async function deleteTaskEvent(eventId: string): Promise<void> {
+  assertOnline()
+
   const { error } = await supabase
     .from('task_events')
     .delete()

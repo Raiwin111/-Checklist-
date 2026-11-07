@@ -20,6 +20,7 @@ import {
   type VaultAccount,
 } from '../features/auth/accountVault'
 import { useDashboard } from '../features/tasks/useDashboard'
+import { CacheNotice } from '../components/CacheNotice'
 import { CategoryManager } from '../features/categories/CategoryManager'
 import { Modal } from '../components/Modal'
 import { deleteAccount } from '../lib/api/account'
@@ -43,7 +44,8 @@ export function SettingsPage() {
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const { data: dashboard, loading: dashboardLoading } = useDashboard(user?.id)
+  const { data: dashboard, loading: dashboardLoading, fromCache, cachedAt } =
+    useDashboard(user?.id)
   const stats = dashboard?.stats
 
   const [exporting, setExporting] = useState(false)
@@ -144,6 +146,8 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
+      {fromCache ? <CacheNotice cachedAt={cachedAt} /> : null}
+
       <div>
         <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">

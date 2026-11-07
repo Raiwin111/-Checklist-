@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchTasks, type TaskWithRelations } from '../../lib/api/tasks'
 import { getErrorMessage } from '../../lib/errors'
+import { cacheKeys, readCache, writeCache } from '../../lib/offline/cache'
+import { useOnlineStatus } from '../../lib/offline/network'
+import { tr } from '../../lib/messages'
 
 export function useTasks(userId: string | undefined) {
+  const online = useOnlineStatus()
   const [tasks, setTasks] = useState<TaskWithRelations[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [fromCache, setFromCache] = useState(false)
+  const [cachedAt, setCachedAt] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
@@ -20,22 +26,61 @@ export function useTasks(userId: string | undefined) {
     setLoading(true)
     setError(null)
 
+    function applyCache(cached: { data: TaskWithRelations[]; cachedAt: string }) {
+      setTasks(cached.data)
+      setFromCache(true)
+      setCachedAt(cached.cachedAt)
+    }
+
+    function loadFromCache(fallbackError?: unknown) {
+      void readCache<TaskWithRelations[]>(userId!, cacheKeys.tasks).then(
+        (cached) => {
+          if (!active) return
+          if (cached) {
+            applyCache(cached)
+          } else if (fallbackError) {
+            setError(getErrorMessage(fallbackError))
+          } else {
+            setError(tr('offline.noCache'))
+          }
+          setLoading(false)
+        },
+      )
+    }
+
+    if (!online) {
+      loadFromCache()
+      return () => {
+        active = false
+      }
+    }
+
     fetchTasks(userId)
       .then((data) => {
         if (!active) return
         setTasks(data)
+        setFromCache(false)
+        setCachedAt(null)
         setLoading(false)
+        void writeCache(userId, cacheKeys.tasks, data)
       })
       .catch((loadError: unknown) => {
         if (!active) return
-        setError(getErrorMessage(loadError))
-        setLoading(false)
+        loadFromCache(loadError)
       })
 
     return () => {
       active = false
     }
-  }, [userId, version])
+  }, [userId, version, online])
 
-  return { tasks, setTasks, loading, error, refresh }
+  return {
+    tasks,
+    setTasks,
+    loading,
+    error,
+    refresh,
+    fromCache,
+    cachedAt,
+  }
 }

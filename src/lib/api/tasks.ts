@@ -2,6 +2,7 @@ import { supabase } from '../supabase'
 import { logTaskEvent } from './events'
 import { attachSignedUrls, type TaskImageWithUrl } from './images'
 import { normalizeStatusProgress } from '../../features/tasks/statusProgress'
+import { assertOnline } from '../offline/network'
 import type {
   Category,
   Task,
@@ -122,6 +123,8 @@ export async function createTask(
     progress: number
   },
 ): Promise<Task> {
+  assertOnline()
+
   const normalized = normalizeStatusProgress({
     status: input.status,
     progress: input.progress,
@@ -164,6 +167,8 @@ export async function updateTask(
   input: TaskUpdateInput,
   previous: Task,
 ): Promise<Task> {
+  assertOnline()
+
   const patch: Record<string, unknown> = {
     client_updated_at: new Date().toISOString(),
   }
@@ -236,6 +241,8 @@ export async function softDeleteTask(
   taskId: string,
   userId: string,
 ): Promise<Task> {
+  assertOnline()
+
   const now = new Date().toISOString()
   const { data, error } = await supabase
     .from('tasks')

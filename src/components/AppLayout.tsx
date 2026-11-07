@@ -6,10 +6,12 @@ import {
   PlusCircle,
   Search,
   Settings,
+  WifiOff,
 } from 'lucide-react'
 import { useAuth } from '../features/auth/auth-context'
 import { listAccounts } from '../features/auth/accountVault'
 import { useI18n } from '../features/i18n/context'
+import { useOnlineStatus } from '../lib/offline/network'
 import type { TranslationKey } from '../features/i18n/dictionary'
 
 const navItems: Array<{
@@ -37,6 +39,7 @@ export function AppLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const { t } = useI18n()
+  const online = useOnlineStatus()
   const accountCount = listAccounts().length
 
   async function handleSignOut() {
@@ -103,6 +106,12 @@ export function AppLayout() {
             {t('nav.subtitle')}
           </p>
           <div className="flex items-center gap-3">
+            {!online ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                <WifiOff className="h-3.5 w-3.5" />
+                {t('offline.badge')}
+              </span>
+            ) : null}
             <span className="hidden max-w-[14rem] truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300 sm:block">
               {user?.email}
             </span>
@@ -116,6 +125,12 @@ export function AppLayout() {
         </header>
 
         <main className="mx-auto w-full max-w-6xl px-4 py-6 pb-28 lg:px-8 lg:pb-10">
+          {!online ? (
+            <div className="mb-4 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+              <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
+              {t('offline.banner')}
+            </div>
+          ) : null}
           <Outlet />
         </main>
       </div>
