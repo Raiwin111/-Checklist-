@@ -4,10 +4,9 @@ import {
   fetchTaskEvents,
   type TaskWithRelations,
 } from '../../lib/api/tasks'
-import { getErrorMessage } from '../../lib/errors'
 import { cacheKeys, readCache, writeCache } from '../../lib/offline/cache'
+import { getLocalTasks, isLocalId } from '../../lib/offline/local'
 import { useOnlineStatus } from '../../lib/offline/network'
-import { tr } from '../../lib/messages'
 import type { TaskEvent } from '../../types/database'
 
 type CachedTaskDetail = {
@@ -26,6 +25,7 @@ export function useTaskDetail(
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
   const [cachedAt, setCachedAt] = useState<string | null>(null)
+  const [hasPendingChanges, setHasPendingChanges] = useState(false)
   const [version, setVersion] = useState(0)
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
@@ -41,51 +41,82 @@ export function useTaskDetail(
     setLoading(true)
     setError(null)
 
-    function applyCache(cached: { data: CachedTaskDetail; cachedAt: string }) {
-      setTask(cached.data.task)
-      setEvents(cached.data.events)
-      setFromCache(true)
-      setCachedAt(cached.cachedAt)
-    }
+    async function load() {
+      let nextTask: TaskWithRelations | null = null
+      let nextEvents: TaskEvent[] = []
+      let isFromCache = false
+      let cachedTime: string | null = null
 
-    function loadFromCache(fallbackError?: unknown) {
-      void readCache<CachedTaskDetail>(userId!, cacheKey).then((cached) => {
-        if (!active) return
-        if (cached) {
-          applyCache(cached)
-        } else if (fallbackError) {
-          setError(getErrorMessage(fallbackError))
-        } else {
-          setError(tr('offline.noCache'))
+      if (online) {
+        try {
+          const [fetchedTask, fetchedEvents] = await Promise.all([
+            fetchTask(taskId!),
+            fetchTaskEvents(taskId!),
+          ])
+          nextTask = fetchedTask
+          nextEvents = fetchedEvents
+          isFromCache = false
+
+          // Merge with local pending changes if this task has a local version
+          const localTasks = await getLocalTasks(userId!)
+          const localTask = localTasks.find((t) => t.id === taskId)
+          if (localTask && isLocalId(localTask.id)) {
+            nextTask = localTask as TaskWithRelations
+            setHasPendingChanges(true)
+          } else {
+            setHasPendingChanges(false)
+          }
+
+          void writeCache(userId!, cacheKey, {
+            task: nextTask,
+            events: nextEvents,
+          })
+        } catch {
+          const cached = await readCache<CachedTaskDetail>(userId!, cacheKey)
+          const localTasks = await getLocalTasks(userId!)
+          const localTask = localTasks.find((t) => t.id === taskId)
+
+          if (cached) {
+            nextTask = cached.data.task
+            nextEvents = cached.data.events
+            isFromCache = true
+            cachedTime = cached.cachedAt
+          }
+          if (localTask && isLocalId(localTask.id)) {
+            nextTask = localTask as TaskWithRelations
+            setHasPendingChanges(true)
+          } else {
+            setHasPendingChanges(false)
+          }
         }
-        setLoading(false)
-      })
-    }
+      } else {
+        const cached = await readCache<CachedTaskDetail>(userId!, cacheKey)
+        const localTasks = await getLocalTasks(userId!)
+        const localTask = localTasks.find((t) => t.id === taskId)
 
-    if (!online) {
-      loadFromCache()
-      return () => {
-        active = false
+        if (localTask && isLocalId(localTask.id)) {
+          nextTask = localTask as TaskWithRelations
+          setHasPendingChanges(true)
+        } else if (cached) {
+          nextTask = cached.data.task
+          nextEvents = cached.data.events
+          isFromCache = true
+          cachedTime = cached.cachedAt
+          setHasPendingChanges(false)
+        } else {
+          setHasPendingChanges(false)
+        }
       }
+
+      if (!active) return
+      setTask(nextTask)
+      setEvents(nextEvents)
+      setFromCache(isFromCache)
+      setCachedAt(cachedTime)
+      setLoading(false)
     }
 
-    Promise.all([fetchTask(taskId), fetchTaskEvents(taskId)])
-      .then(([nextTask, nextEvents]) => {
-        if (!active) return
-        setTask(nextTask)
-        setEvents(nextEvents)
-        setFromCache(false)
-        setCachedAt(null)
-        setLoading(false)
-        void writeCache(userId, cacheKey, {
-          task: nextTask,
-          events: nextEvents,
-        })
-      })
-      .catch((loadError: unknown) => {
-        if (!active) return
-        loadFromCache(loadError)
-      })
+    void load()
 
     return () => {
       active = false
@@ -101,5 +132,6 @@ export function useTaskDetail(
     setTask,
     fromCache,
     cachedAt,
+    hasPendingChanges,
   }
 }

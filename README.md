@@ -89,7 +89,7 @@ npm run dev
 - [x] Phase 4 — UI & Settings (i18n, theme, export)
 - [x] Phase 5 — Search + Rule-based classification (โค้ดเสร็จ, Edge Function `search` deploy แล้ว)
 - [x] Phase 6A — PWA + offline read cache
-- [ ] Phase 6B — Offline CRUD + sync (ต้องอนุมัติแยก)
+- [x] Phase 6B — Offline CRUD + sync (เขียนได้ตอนออฟไลน์, ซิงก์อัตโนมัติเมื่อกลับออนไลน์, last-write-wins + sync_conflicts)
 - [ ] Phase 7 — Testing & Deploy
 
 ## ความปลอดภัย

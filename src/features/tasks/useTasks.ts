@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchTasks, type TaskWithRelations } from '../../lib/api/tasks'
-import { getErrorMessage } from '../../lib/errors'
 import { cacheKeys, readCache, writeCache } from '../../lib/offline/cache'
+import { getLocalTasks, isLocalId } from '../../lib/offline/local'
 import { useOnlineStatus } from '../../lib/offline/network'
-import { tr } from '../../lib/messages'
 
 export function useTasks(userId: string | undefined) {
   const online = useOnlineStatus()
@@ -12,6 +11,7 @@ export function useTasks(userId: string | undefined) {
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
   const [cachedAt, setCachedAt] = useState<string | null>(null)
+  const [hasPendingChanges, setHasPendingChanges] = useState(false)
   const [version, setVersion] = useState(0)
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
@@ -26,47 +26,72 @@ export function useTasks(userId: string | undefined) {
     setLoading(true)
     setError(null)
 
-    function applyCache(cached: { data: TaskWithRelations[]; cachedAt: string }) {
-      setTasks(cached.data)
-      setFromCache(true)
-      setCachedAt(cached.cachedAt)
-    }
+    async function load() {
+      let displayTasks: TaskWithRelations[] = []
+      let isFromCache = false
+      let cachedTime: string | null = null
 
-    function loadFromCache(fallbackError?: unknown) {
-      void readCache<TaskWithRelations[]>(userId!, cacheKeys.tasks).then((cached) => {
-        if (!active) return
-        if (cached) applyCache(cached)
-        else if (fallbackError) setError(getErrorMessage(fallbackError))
-        else setError(tr('offline.noCache'))
-        setLoading(false)
-      })
-    }
-
-    if (!online) {
-      loadFromCache()
-      return () => {
-        active = false
+      if (online) {
+        try {
+          const remote = await fetchTasks(userId!)
+          const local = await getLocalTasks(userId!)
+          const remoteIds = new Set(remote.map((t) => t.id))
+          const pending = local.filter(
+            (t) => isLocalId(t.id) && !remoteIds.has(t.id),
+          )
+          displayTasks = [...remote, ...pending] as TaskWithRelations[]
+          isFromCache = false
+          void writeCache(userId!, cacheKeys.tasks, remote)
+        } catch {
+          const cached = await readCache<TaskWithRelations[]>(
+            userId!,
+            cacheKeys.tasks,
+          )
+          const local = await getLocalTasks(userId!)
+          displayTasks = [
+            ...(cached?.data ?? []),
+            ...local.filter((t) => isLocalId(t.id)),
+          ] as TaskWithRelations[]
+          isFromCache = true
+          cachedTime = cached?.cachedAt ?? null
+        }
+      } else {
+        const cached = await readCache<TaskWithRelations[]>(
+          userId!,
+          cacheKeys.tasks,
+        )
+        const local = await getLocalTasks(userId!)
+        displayTasks = [
+          ...(cached?.data ?? []),
+          ...local.filter((t) => isLocalId(t.id)),
+        ] as TaskWithRelations[]
+        isFromCache = true
+        cachedTime = cached?.cachedAt ?? null
       }
+
+      if (!active) return
+      setTasks(displayTasks)
+      setFromCache(isFromCache)
+      setCachedAt(cachedTime)
+      setHasPendingChanges(displayTasks.some((t) => isLocalId(t.id)))
+      setLoading(false)
     }
 
-    fetchTasks(userId)
-      .then((data) => {
-        if (!active) return
-        setTasks(data)
-        setFromCache(false)
-        setCachedAt(null)
-        setLoading(false)
-        void writeCache(userId!, cacheKeys.tasks, data)
-      })
-      .catch((loadError: unknown) => {
-        if (!active) return
-        loadFromCache(loadError)
-      })
+    void load()
 
     return () => {
       active = false
     }
   }, [userId, version, online])
 
-  return { tasks, setTasks, loading, error, refresh, fromCache, cachedAt }
+  return {
+    tasks,
+    setTasks,
+    loading,
+    error,
+    refresh,
+    fromCache,
+    cachedAt,
+    hasPendingChanges,
+  }
 }

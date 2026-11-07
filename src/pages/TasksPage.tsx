@@ -13,6 +13,9 @@ import {
 } from '../lib/api/tasks'
 import { deleteTaskImage } from '../lib/api/images'
 import { getErrorMessage } from '../lib/errors'
+import { deleteLocalTask } from '../lib/offline/local'
+import { isOnline } from '../lib/offline/network'
+import { tr } from '../lib/messages'
 import { useI18n } from '../features/i18n/context'
 import type { TaskStatus } from '../types/database'
 
@@ -66,10 +69,15 @@ export function TasksPage() {
     setActionError(null)
 
     try {
-      await Promise.allSettled(
-        deleteTarget.images.map((image) => deleteTaskImage(image)),
-      )
-      await softDeleteTask(deleteTarget.id, user.id)
+      if (isOnline()) {
+        await Promise.allSettled(
+          deleteTarget.images.map((image) => deleteTaskImage(image)),
+        )
+        await softDeleteTask(deleteTarget.id, user.id)
+      } else {
+        await deleteLocalTask(user.id, deleteTarget.id)
+        setActionError(tr('offline.deletedOffline'))
+      }
       setDeleteTarget(null)
       refresh()
     } catch (deleteError) {

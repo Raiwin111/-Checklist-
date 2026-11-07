@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import {
   LayoutDashboard,
   ListChecks,
@@ -12,6 +13,8 @@ import { useAuth } from '../features/auth/auth-context'
 import { listAccounts } from '../features/auth/accountVault'
 import { useI18n } from '../features/i18n/context'
 import { useOnlineStatus } from '../lib/offline/network'
+import { syncManager } from '../lib/offline/sync'
+import { SyncStatus } from '../components/SyncStatus'
 import type { TranslationKey } from '../features/i18n/dictionary'
 
 const navItems: Array<{
@@ -41,6 +44,12 @@ export function AppLayout() {
   const { t } = useI18n()
   const online = useOnlineStatus()
   const accountCount = listAccounts().length
+
+  // Auto-sync when reconnecting
+  useEffect(() => {
+    if (!user || !online) return
+    void syncManager.startSync(user.id)
+  }, [user, online])
 
   async function handleSignOut() {
     await signOut()
@@ -121,6 +130,7 @@ export function AppLayout() {
             >
               {user?.email?.charAt(0).toUpperCase() ?? '?'}
             </NavLink>
+            {user ? <SyncStatus /> : null}
           </div>
         </header>
 

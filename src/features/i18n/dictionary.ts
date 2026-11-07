@@ -39,6 +39,14 @@ const th = {
   'offline.cachedAt': 'กำลังแสดงข้อมูลแคชเมื่อ {time}',
   'offline.onlineBack': 'กลับมาออนไลน์แล้ว',
 
+  'offline.synced': 'ซิงก์เรียบร้อย',
+  'offline.syncing': 'กำลังซิงก์ข้อมูล…',
+  'offline.pendingSync': 'รอซิงก์ {count} รายการ',
+  'offline.conflictDetected': 'พบการชนของข้อมูล — ใช้เซิร์ฟเวอร์เป็นหลัก',
+  'offline.createdOffline': 'สร้าง "{title}" ไว้ในเครื่องแล้ว จะซิงก์เมื่อกลับมาออนไลน์',
+  'offline.updatedOffline': 'แก้ไขในเครื่องแล้ว จะซิงก์เมื่อกลับมาออนไลน์',
+  'offline.deletedOffline': 'ลบในเครื่องแล้ว จะซิงก์เมื่อกลับมาออนไลน์',
+
   'nav.dashboard': 'Dashboard',
   'nav.addTask': 'เพิ่ม Task',
   'nav.tasks': 'จัดการ Task',
@@ -350,6 +358,14 @@ const en: { [K in keyof typeof th]: string } = {
     'No cached data is available offline. Connect to the internet, then open this page again.',
   'offline.cachedAt': 'Showing cached data from {time}',
   'offline.onlineBack': 'Back online',
+
+  'offline.synced': 'Synced',
+  'offline.syncing': 'Syncing…',
+  'offline.pendingSync': '{count} pending sync',
+  'offline.conflictDetected': 'Conflict detected — server version wins',
+  'offline.createdOffline': 'Created "{title}" locally. Will sync when back online',
+  'offline.updatedOffline': 'Updated locally. Will sync when back online',
+  'offline.deletedOffline': 'Deleted locally. Will sync when back online',
 
   'nav.dashboard': 'Dashboard',
   'nav.addTask': 'Add Task',

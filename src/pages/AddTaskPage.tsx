@@ -4,9 +4,12 @@ import { useAuth } from '../features/auth/auth-context'
 import { useCategories } from '../features/tasks/useCategories'
 import { TaskForm, type TaskFormValues } from '../features/tasks/TaskForm'
 import { createTask } from '../lib/api/tasks'
+import { createLocalTask } from '../lib/offline/local'
+import { isOnline } from '../lib/offline/network'
 import { uploadTaskImage } from '../lib/api/images'
 import { logTaskEvent } from '../lib/api/events'
 import { useI18n } from '../features/i18n/context'
+import { tr } from '../lib/messages'
 
 export function AddTaskPage() {
   const { user } = useAuth()
@@ -18,19 +21,39 @@ export function AddTaskPage() {
     error: categoriesError,
   } = useCategories(user?.id)
   const [submitting, setSubmitting] = useState(false)
+  const [offlineNotice, setOfflineNotice] = useState<string | null>(null)
 
   async function handleSubmit(values: TaskFormValues) {
     if (!user) return
     setSubmitting(true)
+    setOfflineNotice(null)
 
     try {
-      const task = await createTask(user.id, {
-        title: values.title,
-        description: values.description,
-        categoryId: values.categoryId || null,
-        status: values.status,
-        progress: values.progress,
-      })
+      const task = isOnline()
+        ? await createTask(user.id, {
+            title: values.title,
+            description: values.description,
+            categoryId: values.categoryId || null,
+            status: values.status,
+            progress: values.progress,
+          })
+        : await createLocalTask(user.id, {
+            title: values.title,
+            description: values.description,
+            categoryId: values.categoryId || null,
+            status: values.status,
+            progress: values.progress,
+          })
+
+      if (!isOnline()) {
+        setOfflineNotice(
+          tr('offline.createdOffline', {
+            title: task.title,
+          }),
+        )
+        navigate('/tasks', { replace: true })
+        return
+      }
 
       const failedImages: string[] = []
       let uploadedCount = 0
@@ -78,6 +101,12 @@ export function AddTaskPage() {
           {t('add.subtitle')}
         </p>
       </div>
+
+      {offlineNotice ? (
+        <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+          {offlineNotice}
+        </div>
+      ) : null}
 
       {categoriesError ? (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">

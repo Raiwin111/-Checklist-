@@ -21,13 +21,19 @@ import { StatusBadge } from '../features/tasks/StatusBadge'
 import { ProgressBar } from '../features/tasks/ProgressBar'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { CacheNotice } from '../components/CacheNotice'
-import { updateTask, softDeleteTask } from '../lib/api/tasks'
+import {
+  updateTask,
+  softDeleteTask,
+} from '../lib/api/tasks'
 import { deleteTaskImage, uploadTaskImage } from '../lib/api/images'
 import { deleteTaskEvent, logTaskEvent } from '../lib/api/events'
 import { formatDateTime, formatRelative } from '../lib/format'
 import { getErrorMessage } from '../lib/errors'
 import { describeEvent } from '../features/tasks/eventDetails'
 import { useI18n } from '../features/i18n/context'
+import { updateLocalTask, deleteLocalTask } from '../lib/offline/local'
+import { isOnline } from '../lib/offline/network'
+import { tr } from '../lib/messages'
 import type { TaskEvent } from '../types/database'
 
 export function TaskDetailPage() {
@@ -59,64 +65,76 @@ export function TaskDetailPage() {
     setActionError(null)
 
     try {
-      await updateTask(
-        task.id,
-        user.id,
-        {
+      if (isOnline()) {
+        await updateTask(
+          task.id,
+          user.id,
+          {
+            title: values.title,
+            description: values.description,
+            categoryId: values.categoryId || null,
+            status: values.status,
+            progress: values.progress,
+          },
+          task,
+        )
+
+        const removedImages = task.images.filter((image) =>
+          values.removedImageIds.includes(image.id),
+        )
+        await Promise.allSettled(
+          removedImages.map((image) => deleteTaskImage(image)),
+        )
+        if (removedImages.length > 0) {
+          await logTaskEvent({
+            taskId: task.id,
+            userId: user.id,
+            eventType: 'image_removed',
+            payload: { count: removedImages.length },
+          })
+        }
+
+        let uploadedCount = 0
+        const failedImages: string[] = []
+
+        for (const file of values.newImages) {
+          try {
+            await uploadTaskImage(user.id, task.id, file)
+            uploadedCount += 1
+          } catch (uploadError) {
+            console.error('Failed to upload image', uploadError)
+            failedImages.push(file.name)
+          }
+        }
+
+        if (uploadedCount > 0) {
+          await logTaskEvent({
+            taskId: task.id,
+            userId: user.id,
+            eventType: 'image_added',
+            payload: { count: uploadedCount },
+          })
+        }
+
+        if (failedImages.length > 0) {
+          setActionError(
+            t('form.uploadFailed', { names: failedImages.join(', ') }),
+          )
+        }
+
+        setEditing(false)
+        refresh()
+      } else {
+        await updateLocalTask(user.id, task.id, {
           title: values.title,
           description: values.description,
           categoryId: values.categoryId || null,
           status: values.status,
           progress: values.progress,
-        },
-        task,
-      )
-
-      const removedImages = task.images.filter((image) =>
-        values.removedImageIds.includes(image.id),
-      )
-      await Promise.allSettled(
-        removedImages.map((image) => deleteTaskImage(image)),
-      )
-      if (removedImages.length > 0) {
-        await logTaskEvent({
-          taskId: task.id,
-          userId: user.id,
-          eventType: 'image_removed',
-          payload: { count: removedImages.length },
         })
+        setEditing(false)
+        setActionError(tr('offline.updatedOffline'))
       }
-
-      let uploadedCount = 0
-      const failedImages: string[] = []
-
-      for (const file of values.newImages) {
-        try {
-          await uploadTaskImage(user.id, task.id, file)
-          uploadedCount += 1
-        } catch (uploadError) {
-          console.error('Failed to upload image', uploadError)
-          failedImages.push(file.name)
-        }
-      }
-
-      if (uploadedCount > 0) {
-        await logTaskEvent({
-          taskId: task.id,
-          userId: user.id,
-          eventType: 'image_added',
-          payload: { count: uploadedCount },
-        })
-      }
-
-      if (failedImages.length > 0) {
-        setActionError(
-          t('form.uploadFailed', { names: failedImages.join(', ') }),
-        )
-      }
-
-      setEditing(false)
-      refresh()
     } finally {
       setSubmitting(false)
     }
@@ -129,10 +147,15 @@ export function TaskDetailPage() {
     setActionError(null)
 
     try {
-      await Promise.allSettled(
-        task.images.map((image) => deleteTaskImage(image)),
-      )
-      await softDeleteTask(task.id, user.id)
+      if (isOnline()) {
+        await Promise.allSettled(
+          task.images.map((image) => deleteTaskImage(image)),
+        )
+        await softDeleteTask(task.id, user.id)
+      } else {
+        await deleteLocalTask(user.id, task.id)
+        setActionError(tr('offline.deletedOffline'))
+      }
       navigate('/tasks', { replace: true })
     } catch (deleteError) {
       setActionError(getErrorMessage(deleteError))
