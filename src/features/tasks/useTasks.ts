@@ -33,19 +33,13 @@ export function useTasks(userId: string | undefined) {
     }
 
     function loadFromCache(fallbackError?: unknown) {
-      void readCache<TaskWithRelations[]>(userId!, cacheKeys.tasks).then(
-        (cached) => {
-          if (!active) return
-          if (cached) {
-            applyCache(cached)
-          } else if (fallbackError) {
-            setError(getErrorMessage(fallbackError))
-          } else {
-            setError(tr('offline.noCache'))
-          }
-          setLoading(false)
-        },
-      )
+      void readCache<TaskWithRelations[]>(userId!, cacheKeys.tasks).then((cached) => {
+        if (!active) return
+        if (cached) applyCache(cached)
+        else if (fallbackError) setError(getErrorMessage(fallbackError))
+        else setError(tr('offline.noCache'))
+        setLoading(false)
+      })
     }
 
     if (!online) {
@@ -62,7 +56,7 @@ export function useTasks(userId: string | undefined) {
         setFromCache(false)
         setCachedAt(null)
         setLoading(false)
-        void writeCache(userId, cacheKeys.tasks, data)
+        void writeCache(userId!, cacheKeys.tasks, data)
       })
       .catch((loadError: unknown) => {
         if (!active) return
@@ -74,13 +68,5 @@ export function useTasks(userId: string | undefined) {
     }
   }, [userId, version, online])
 
-  return {
-    tasks,
-    setTasks,
-    loading,
-    error,
-    refresh,
-    fromCache,
-    cachedAt,
-  }
+  return { tasks, setTasks, loading, error, refresh, fromCache, cachedAt }
 }
