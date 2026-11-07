@@ -22,15 +22,17 @@ import { ProgressBar } from '../features/tasks/ProgressBar'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { updateTask, softDeleteTask } from '../lib/api/tasks'
 import { deleteTaskImage, uploadTaskImage } from '../lib/api/images'
-import { logTaskEvent } from '../lib/api/events'
-import { eventLabel, formatDateTime, formatRelative } from '../lib/format'
+import { deleteTaskEvent, logTaskEvent } from '../lib/api/events'
+import { formatDateTime, formatRelative } from '../lib/format'
 import { getErrorMessage } from '../lib/errors'
 import { describeEvent } from '../features/tasks/eventDetails'
+import { useI18n } from '../features/i18n/context'
 import type { TaskEvent } from '../types/database'
 
 export function TaskDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useAuth()
+  const { t, locale } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const { task, events, loading, error, refresh } = useTaskDetail(id)
@@ -43,6 +45,8 @@ export function TaskDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [eventToDelete, setEventToDelete] = useState<TaskEvent | null>(null)
+  const [deletingEvent, setDeletingEvent] = useState(false)
 
   const warning = (location.state as { warning?: string } | null)?.warning
 
@@ -104,7 +108,9 @@ export function TaskDetailPage() {
       }
 
       if (failedImages.length > 0) {
-        setActionError(`อัปโหลดรูปไม่สำเร็จ: ${failedImages.join(', ')}`)
+        setActionError(
+          t('form.uploadFailed', { names: failedImages.join(', ') }),
+        )
       }
 
       setEditing(false)
@@ -133,6 +139,24 @@ export function TaskDetailPage() {
     }
   }
 
+  async function handleDeleteEvent() {
+    if (!eventToDelete) return
+
+    setDeletingEvent(true)
+    setActionError(null)
+
+    try {
+      await deleteTaskEvent(eventToDelete.id)
+      setEventToDelete(null)
+      refresh()
+    } catch (deleteError) {
+      setActionError(getErrorMessage(deleteError))
+      setEventToDelete(null)
+    } finally {
+      setDeletingEvent(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -148,7 +172,7 @@ export function TaskDetailPage() {
           {error}
         </div>
         <Link className="text-sm font-medium text-indigo-600" to="/tasks">
-          กลับไปรายการ Task
+          {t('detail.backToTasks')}
         </Link>
       </div>
     )
@@ -157,15 +181,15 @@ export function TaskDetailPage() {
   if (!task) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
-        <h1 className="text-lg font-semibold">ไม่พบ Task นี้</h1>
+        <h1 className="text-lg font-semibold">{t('detail.notFound')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Task อาจถูกลบไปแล้ว
+          {t('detail.notFoundHint')}
         </p>
         <Link
           className="mt-5 inline-flex rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white"
           to="/tasks"
         >
-          กลับไปรายการ Task
+          {t('detail.backToTasks')}
         </Link>
       </div>
     )
@@ -181,9 +205,9 @@ export function TaskDetailPage() {
             type="button"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            กลับไปรายละเอียด
+            {t('detail.backToDetail')}
           </button>
-          <h1 className="mt-1 text-2xl font-bold">แก้ไข Task</h1>
+          <h1 className="mt-1 text-2xl font-bold">{t('detail.editTitle')}</h1>
         </div>
 
         {actionError ? (
@@ -204,7 +228,7 @@ export function TaskDetailPage() {
               status: task.status,
               progress: task.progress,
             }}
-            submitLabel="บันทึกการแก้ไข"
+            submitLabel={t('detail.saveChanges')}
             submitting={submitting}
             onCancel={() => setEditing(false)}
             onSubmit={handleUpdate}
@@ -214,7 +238,12 @@ export function TaskDetailPage() {
     )
   }
 
-  const eventDetail = (event: TaskEvent) => describeEvent(event)
+  const eventDetail = (event: TaskEvent) => describeEvent(event, t)
+  const categoryName = task.category
+    ? locale === 'th'
+      ? task.category.name_th
+      : task.category.name_en
+    : null
 
   return (
     <div className="space-y-5">
@@ -237,7 +266,7 @@ export function TaskDetailPage() {
             to="/tasks"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            กลับไปรายการ Task
+            {t('detail.backToTasks')}
           </Link>
           <h1 className="mt-2 text-2xl font-bold break-words">{task.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -248,11 +277,15 @@ export function TaskDetailPage() {
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: task.category.color }}
                 />
-                {task.category.name_th}
+                {categoryName}
               </span>
             ) : null}
             <span className="text-xs text-slate-400">
-              แก้ไข {formatRelative(task.client_updated_at ?? task.updated_at)}
+              {t('detail.updatedRelative', {
+                time: formatRelative(
+                  task.client_updated_at ?? task.updated_at,
+                ),
+              })}
             </span>
           </div>
         </div>
@@ -264,7 +297,7 @@ export function TaskDetailPage() {
             type="button"
           >
             <Pencil className="h-4 w-4" />
-            แก้ไข
+            {t('common.edit')}
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
@@ -272,7 +305,7 @@ export function TaskDetailPage() {
             type="button"
           >
             <Trash2 className="h-4 w-4" />
-            ลบ
+            {t('common.delete')}
           </button>
         </div>
       </div>
@@ -280,15 +313,15 @@ export function TaskDetailPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-            <h2 className="text-sm font-semibold">รายละเอียด</h2>
+            <h2 className="text-sm font-semibold">{t('detail.details')}</h2>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              {task.description || 'ไม่มีรายละเอียด'}
+              {task.description || t('detail.noDescription')}
             </p>
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center justify-between text-sm">
-              <h2 className="font-semibold">ความคืบหน้า</h2>
+              <h2 className="font-semibold">{t('detail.progress')}</h2>
               <span className="font-bold text-indigo-600 dark:text-indigo-400">
                 {task.progress}%
               </span>
@@ -300,7 +333,7 @@ export function TaskDetailPage() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
                 <ImageIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                รูปภาพ ({task.images.length})
+                {t('detail.imagesCount', { count: task.images.length })}
               </h2>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {task.images.map((image) => (
@@ -319,7 +352,7 @@ export function TaskDetailPage() {
                       />
                     ) : (
                       <div className="flex h-36 items-center justify-center text-xs text-slate-400">
-                        ไม่มีตัวอย่าง
+                        {t('common.noPreview')}
                       </div>
                     )}
                   </a>
@@ -331,11 +364,13 @@ export function TaskDetailPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
             <h2 className="flex items-center gap-2 text-sm font-semibold">
               <Clock3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-              Activity Timeline
+              {t('detail.timeline')}
             </h2>
 
             {events.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-400">ยังไม่มีกิจกรรม</p>
+              <p className="mt-4 text-sm text-slate-400">
+                {t('detail.noActivity')}
+              </p>
             ) : (
               <ol className="mt-4 space-y-4">
                 {events.map((event) => {
@@ -343,18 +378,29 @@ export function TaskDetailPage() {
                   return (
                     <li key={event.id} className="flex gap-3">
                       <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">
-                          {eventLabel[event.event_type]}
-                        </p>
-                        {detail ? (
-                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                            {detail}
+                      <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">
+                            {t(`event.${event.event_type}`)}
                           </p>
-                        ) : null}
-                        <p className="mt-0.5 text-xs text-slate-400">
-                          {formatDateTime(event.created_at)}
-                        </p>
+                          {detail ? (
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                              {detail}
+                            </p>
+                          ) : null}
+                          <p className="mt-0.5 text-xs text-slate-400">
+                            {formatDateTime(event.created_at)}
+                          </p>
+                        </div>
+                        <button
+                          aria-label={t('detail.deleteEventAria')}
+                          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                          onClick={() => setEventToDelete(event)}
+                          title={t('detail.deleteEventAria')}
+                          type="button"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </li>
                   )
@@ -366,33 +412,43 @@ export function TaskDetailPage() {
 
         <aside className="space-y-4">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-            <h2 className="text-sm font-semibold">ข้อมูล Task</h2>
+            <h2 className="text-sm font-semibold">{t('detail.info')}</h2>
             <dl className="mt-3 space-y-3 text-sm">
               <div>
-                <dt className="text-xs text-slate-400">ประเภท</dt>
+                <dt className="text-xs text-slate-400">
+                  {t('detail.category')}
+                </dt>
                 <dd className="mt-0.5">
-                  {task.category?.name_th ?? 'ไม่มีประเภท'}
+                  {categoryName ?? t('common.noCategory')}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">สถานะ</dt>
+                <dt className="text-xs text-slate-400">{t('detail.status')}</dt>
                 <dd className="mt-0.5">
                   <StatusBadge status={task.status} />
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">สร้างเมื่อ</dt>
+                <dt className="text-xs text-slate-400">
+                  {t('detail.createdAt')}
+                </dt>
                 <dd className="mt-0.5">{formatDateTime(task.created_at)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">แก้ไขล่าสุด</dt>
+                <dt className="text-xs text-slate-400">
+                  {t('detail.updatedAt')}
+                </dt>
                 <dd className="mt-0.5">
                   {formatDateTime(task.client_updated_at ?? task.updated_at)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">จำนวนรูป</dt>
-                <dd className="mt-0.5">{task.images.length} รูป</dd>
+                <dt className="text-xs text-slate-400">
+                  {t('detail.imageCount')}
+                </dt>
+                <dd className="mt-0.5">
+                  {t('detail.imageUnit', { count: task.images.length })}
+                </dd>
               </div>
             </dl>
           </section>
@@ -400,14 +456,25 @@ export function TaskDetailPage() {
       </div>
 
       <ConfirmDialog
+        busy={deletingEvent}
+        danger
+        confirmLabel={t('detail.deleteEvent')}
+        description={t('detail.deleteEventDescription')}
+        onClose={() => setEventToDelete(null)}
+        onConfirm={() => void handleDeleteEvent()}
+        open={eventToDelete !== null}
+        title={t('detail.deleteEventTitle')}
+      />
+
+      <ConfirmDialog
         busy={deleting}
         danger
-        confirmLabel="ลบ Task"
-        description={`ต้องการลบ "${task.title}" ใช่หรือไม่? รูปภาพและข้อมูลที่เกี่ยวข้องจะถูกลบด้วย`}
+        confirmLabel={t('tasks.deleteConfirm')}
+        description={t('detail.deleteDescription', { title: task.title })}
         onClose={() => setDeleteOpen(false)}
         onConfirm={() => void handleDelete()}
         open={deleteOpen}
-        title="ลบ Task"
+        title={t('detail.deleteTitle')}
       />
     </div>
   )

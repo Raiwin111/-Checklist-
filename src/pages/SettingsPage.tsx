@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Download,
-  FolderKanban,
   Languages,
+  ListChecks,
   Loader2,
   LogOut,
   Moon,
@@ -23,7 +23,11 @@ import { useDashboard } from '../features/tasks/useDashboard'
 import { CategoryManager } from '../features/categories/CategoryManager'
 import { Modal } from '../components/Modal'
 import { deleteAccount } from '../lib/api/account'
+import { exportUserData } from '../lib/api/export'
+import { supabase } from '../lib/supabase'
 import { getErrorMessage } from '../lib/errors'
+import { useI18n } from '../features/i18n/context'
+import type { Locale } from '../features/i18n/dictionary'
 
 const cardClass =
   'rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900'
@@ -31,6 +35,7 @@ const cardClass =
 export function SettingsPage() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const { t, locale, setLocale } = useI18n()
   const [accounts, setAccounts] = useState<VaultAccount[]>(() => listAccounts())
   const [theme, setTheme] = useState<'light' | 'dark'>(() =>
     document.documentElement.classList.contains('dark') ? 'dark' : 'light',
@@ -40,6 +45,9 @@ export function SettingsPage() {
 
   const { data: dashboard, loading: dashboardLoading } = useDashboard(user?.id)
   const stats = dashboard?.stats
+
+  const [exporting, setExporting] = useState(false)
+  const [exportNote, setExportNote] = useState<string | null>(null)
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
@@ -73,6 +81,38 @@ export function SettingsPage() {
     setAccounts(listAccounts())
   }
 
+  function handleLocaleChange(nextLocale: Locale) {
+    setLocale(nextLocale)
+    if (user) {
+      void supabase
+        .from('profiles')
+        .update({ locale: nextLocale })
+        .eq('id', user.id)
+        .then(({ error: updateError }) => {
+          if (updateError) {
+            console.error('Failed to save locale', updateError)
+          }
+        })
+    }
+  }
+
+  async function handleExport() {
+    if (!user) return
+
+    setExporting(true)
+    setError(null)
+    setExportNote(null)
+
+    try {
+      await exportUserData(user.id)
+      setExportNote(t('settings.exportDone'))
+    } catch (exportError) {
+      setError(getErrorMessage(exportError))
+    } finally {
+      setExporting(false)
+    }
+  }
+
   function openDelete() {
     setDeleteConfirmText('')
     setDeleteError(null)
@@ -96,18 +136,18 @@ export function SettingsPage() {
     deleteConfirmText.trim().toLowerCase() === (user?.email ?? '').toLowerCase()
 
   const statCards = [
-    ['งานทั้งหมด', stats?.total ?? 0],
-    ['เสร็จแล้ว', stats?.completed ?? 0],
-    ['กำลังทำ', stats?.inProgress ?? 0],
-    ['ยังไม่เริ่ม', stats?.notStarted ?? 0],
+    [t('dashboard.total'), stats?.total ?? 0],
+    [t('dashboard.completed'), stats?.completed ?? 0],
+    [t('dashboard.inProgress'), stats?.inProgress ?? 0],
+    [t('dashboard.notStarted'), stats?.notStarted ?? 0],
   ] as const
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <div>
-        <h1 className="text-2xl font-bold">ตั้งค่า</h1>
+        <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          จัดการบัญชี ธีม ภาษา และข้อมูลของคุณ
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -117,15 +157,21 @@ export function SettingsPage() {
         </div>
       ) : null}
 
+      {exportNote ? (
+        <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+          {exportNote}
+        </div>
+      ) : null}
+
       <section className={cardClass}>
         <div className="mb-4 flex items-center gap-2">
           <UserRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-sm font-semibold">บัญชีในเครื่องนี้</h2>
+          <h2 className="text-sm font-semibold">{t('settings.deviceAccounts')}</h2>
         </div>
         <div className="space-y-2">
           {accounts.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              ยังไม่มีบัญชีที่บันทึกไว้
+              {t('settings.noAccounts')}
             </p>
           ) : (
             accounts.map((account) => {
@@ -140,13 +186,13 @@ export function SettingsPage() {
                       {account.email}
                     </p>
                     <p className="text-xs text-slate-400">
-                      {isCurrent ? 'กำลังใช้งาน' : 'บันทึกไว้ในเครื่อง'}
+                      {isCurrent ? t('settings.active') : t('settings.saved')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {isCurrent ? (
                       <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                        Active
+                        {t('settings.activeBadge')}
                       </span>
                     ) : (
                       <button
@@ -155,17 +201,21 @@ export function SettingsPage() {
                         onClick={() => void handleSwitch(account)}
                         type="button"
                       >
-                        {busyUserId === account.userId ? 'กำลังสลับ…' : 'สลับบัญชี'}
+                        {busyUserId === account.userId
+                          ? t('settings.switching')
+                          : t('settings.switch')}
                       </button>
                     )}
                     <button
                       className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
                       disabled={isCurrent}
                       onClick={() => handleRemove(account.userId)}
-                      title={isCurrent ? 'ออกจากระบบก่อนจึงจะลบบัญชีออกจากเครื่องได้' : undefined}
+                      title={
+                        isCurrent ? t('settings.removeCurrentHint') : undefined
+                      }
                       type="button"
                     >
-                      ลบออกจากเครื่อง
+                      {t('settings.removeFromDevice')}
                     </button>
                   </div>
                 </div>
@@ -179,7 +229,7 @@ export function SettingsPage() {
           type="button"
         >
           <LogOut className="h-4 w-4" />
-          ออกจากระบบ
+          {t('nav.signOut')}
         </button>
       </section>
 
@@ -188,29 +238,34 @@ export function SettingsPage() {
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-sm font-semibold">General Settings</h2>
+        <h2 className="text-sm font-semibold">{t('settings.general')}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-sm font-medium" htmlFor="language">
+            <label
+              className="flex items-center gap-2 text-sm font-medium"
+              htmlFor="language"
+            >
               <Languages className="h-4 w-4" />
-              ภาษา
+              {t('settings.language')}
             </label>
             <select
               id="language"
               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950"
-              defaultValue="th"
-              disabled
+              value={locale}
+              onChange={(event) =>
+                handleLocaleChange(event.target.value as Locale)
+              }
             >
               <option value="th">ไทย (Thai)</option>
               <option value="en">English</option>
             </select>
             <p className="text-xs text-slate-400">
-              การสลับภาษาจะเปิดใช้งานใน Phase 4
+              {t('settings.languageHint')}
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <span className="text-sm font-medium">ธีม</span>
+            <span className="text-sm font-medium">{t('settings.theme')}</span>
             <div className="flex gap-2">
               <button
                 className={[
@@ -223,7 +278,7 @@ export function SettingsPage() {
                 type="button"
               >
                 <Sun className="h-4 w-4" />
-                สว่าง
+                {t('settings.light')}
               </button>
               <button
                 className={[
@@ -236,7 +291,7 @@ export function SettingsPage() {
                 type="button"
               >
                 <Moon className="h-4 w-4" />
-                มืด
+                {t('settings.dark')}
               </button>
             </div>
           </div>
@@ -246,8 +301,8 @@ export function SettingsPage() {
       <section className={cardClass}>
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <FolderKanban className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            System Information
+            <ListChecks className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            {t('settings.systemInfo')}
           </h2>
           {dashboardLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
@@ -267,31 +322,38 @@ export function SettingsPage() {
           ))}
         </dl>
         <p className="mt-3 text-xs text-slate-400">
-          ความคืบหน้าเฉลี่ย {stats?.averageProgress ?? 0}% · พักไว้{' '}
-          {stats?.onHold ?? 0} งาน
+          {t('settings.avgProgress', {
+            value: stats?.averageProgress ?? 0,
+            count: stats?.onHold ?? 0,
+          })}
         </p>
       </section>
 
       <section className={cardClass}>
-        <h2 className="text-sm font-semibold">Data Management</h2>
+        <h2 className="text-sm font-semibold">{t('settings.dataManagement')}</h2>
         <div className="mt-4 space-y-3">
           <button
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-            disabled
+            disabled={exporting}
+            onClick={() => void handleExport()}
             type="button"
           >
-            <Download className="h-4 w-4" />
-            ส่งออกข้อมูล (Phase 4)
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {exporting ? t('settings.exporting') : t('settings.export')}
           </button>
+          <p className="text-xs text-slate-400">{t('settings.exportHint')}</p>
 
           <div className="rounded-xl border border-red-200 p-4 dark:border-red-500/30">
             <div className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
               <ShieldAlert className="h-4 w-4" />
-              Danger Zone
+              {t('settings.dangerZone')}
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              การลบบัญชีจะลบ Task รูปภาพ ประวัติ และข้อมูลทั้งหมดอย่างถาวร
-              ไม่สามารถกู้คืนได้
+              {t('settings.deleteAccountDescription')}
             </p>
             <button
               className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500"
@@ -299,7 +361,7 @@ export function SettingsPage() {
               type="button"
             >
               <Trash2 className="h-4 w-4" />
-              ลบบัญชีถาวร
+              {t('settings.deleteAccount')}
             </button>
           </div>
         </div>
@@ -307,7 +369,7 @@ export function SettingsPage() {
 
       <Modal
         open={deleteOpen}
-        title="ลบบัญชีถาวร"
+        title={t('settings.deleteModalTitle')}
         onClose={() => {
           if (deleting) return
           setDeleteOpen(false)
@@ -320,7 +382,7 @@ export function SettingsPage() {
               onClick={() => setDeleteOpen(false)}
               type="button"
             >
-              ยกเลิก
+              {t('common.cancel')}
             </button>
             <button
               className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
@@ -333,19 +395,17 @@ export function SettingsPage() {
               ) : (
                 <Trash2 className="h-4 w-4" />
               )}
-              {deleting ? 'กำลังลบ…' : 'ลบบัญชีถาวร'}
+              {deleting ? t('settings.deleting') : t('settings.deleteAccount')}
             </button>
           </>
         }
       >
         <div className="space-y-3">
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            ข้อมูลทั้งหมดของคุณจะถูกลบอย่างถาวร พิมพ์อีเมล{' '}
-            <span className="font-semibold">{user?.email}</span>{' '}
-            เพื่อยืนยันการลบบัญชี
+            {t('settings.deleteConfirmText', { email: user?.email ?? '' })}
           </p>
           <input
-            aria-label="ยืนยันอีเมล"
+            aria-label={t('settings.deleteConfirmLabel')}
             autoComplete="off"
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 dark:border-slate-700 dark:bg-slate-950"
             placeholder={user?.email ?? ''}

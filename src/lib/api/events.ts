@@ -27,3 +27,12 @@ export async function logTaskEvent({
     console.error('Failed to log task event', error)
   }
 }
+
+export async function deleteTaskEvent(eventId: string): Promise<void> {
+  const { error } = await supabase
+    .from('task_events')
+    .delete()
+    .eq('id', eventId)
+
+  if (error) throw error
+}

@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
 import { useAuth } from './auth-context'
+import { useI18n } from '../i18n/context'
 
 export function ResetPasswordPage() {
   const { session, loading, updatePassword } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -16,12 +18,12 @@ export function ResetPasswordPage() {
     setError(null)
 
     if (password.length < 8) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      setError(t('auth.passwordMin'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('รหัสผ่านทั้งสองช่องไม่ตรงกัน')
+      setError(t('auth.passwordMismatch'))
       return
     }
 
@@ -48,25 +50,25 @@ export function ResetPasswordPage() {
   if (!session) {
     return (
       <AuthShell
-        title="ลิงก์ไม่ถูกต้อง"
-        subtitle="ลิงก์ตั้งรหัสผ่านนี้อาจหมดอายุหรือถูกใช้ไปแล้ว"
+        title={t('auth.invalidLinkTitle')}
+        subtitle={t('auth.invalidLinkSubtitle')}
       >
         <Link
           className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
           to="/forgot-password"
         >
-          ขอรับลิงก์ใหม่
+          {t('auth.requestNewLink')}
         </Link>
       </AuthShell>
     )
   }
 
   return (
-    <AuthShell title="ตั้งรหัสผ่านใหม่">
+    <AuthShell title={t('auth.newPasswordTitle')}>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="password">
-            รหัสผ่านใหม่
+            {t('auth.newPassword')}
           </label>
           <input
             id="password"
@@ -82,7 +84,7 @@ export function ResetPasswordPage() {
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="confirm-password">
-            ยืนยันรหัสผ่านใหม่
+            {t('auth.confirmNewPassword')}
           </label>
           <input
             id="confirm-password"
@@ -103,7 +105,7 @@ export function ResetPasswordPage() {
         ) : null}
 
         <button className={primaryButtonClass} type="submit" disabled={submitting}>
-          {submitting ? 'กำลังบันทึก…' : 'บันทึกรหัสผ่านใหม่'}
+          {submitting ? t('common.saving') : t('auth.savePassword')}
         </button>
       </form>
     </AuthShell>

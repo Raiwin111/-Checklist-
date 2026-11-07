@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
 import { useAuth } from './auth-context'
+import { useI18n } from '../i18n/context'
 
 export function LoginPage() {
   const { session, loading, signIn } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')
@@ -42,14 +44,11 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell
-      title="เข้าสู่ระบบ"
-      subtitle="จัดการงาน เรียน โปรเจกต์ และงานวิจัยของคุณ"
-    >
+    <AuthShell title={t('auth.loginTitle')} subtitle={t('auth.loginSubtitle')}>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="email">
-            อีเมล
+            {t('auth.email')}
           </label>
           <input
             id="email"
@@ -65,13 +64,13 @@ export function LoginPage() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium" htmlFor="password">
-              รหัสผ่าน
+              {t('auth.password')}
             </label>
             <Link
               className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
               to="/forgot-password"
             >
-              ลืมรหัสผ่าน?
+              {t('auth.forgot')}
             </Link>
           </div>
           <input
@@ -92,17 +91,17 @@ export function LoginPage() {
         ) : null}
 
         <button className={primaryButtonClass} type="submit" disabled={submitting}>
-          {submitting ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
+          {submitting ? t('auth.signingIn') : t('auth.signIn')}
         </button>
       </form>
 
       <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-        ยังไม่มีบัญชี?{' '}
+        {t('auth.noAccount')}{' '}
         <Link
           className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
           to="/signup"
         >
-          สมัครสมาชิก
+          {t('auth.signUpLink')}
         </Link>
       </p>
     </AuthShell>

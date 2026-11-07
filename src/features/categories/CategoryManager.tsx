@@ -22,14 +22,20 @@ import { getErrorMessage } from '../../lib/errors'
 import { Modal } from '../../components/Modal'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { useCategories } from '../tasks/useCategories'
+import { useI18n } from '../i18n/context'
+import type { TranslationKey } from '../i18n/dictionary'
 
-const ICON_OPTIONS = [
-  { value: 'folder', label: 'โฟลเดอร์', Icon: FolderKanban },
-  { value: 'book-open', label: 'หนังสือ', Icon: BookOpen },
-  { value: 'microscope', label: 'วิจัย', Icon: Microscope },
-  { value: 'briefcase', label: 'งาน', Icon: Briefcase },
-  { value: 'palette', label: 'สร้างสรรค์', Icon: Palette },
-] as const
+const ICON_OPTIONS: Array<{
+  value: string
+  labelKey: TranslationKey
+  Icon: typeof FolderKanban
+}> = [
+  { value: 'folder', labelKey: 'icon.folder', Icon: FolderKanban },
+  { value: 'book-open', labelKey: 'icon.book', Icon: BookOpen },
+  { value: 'microscope', labelKey: 'icon.research', Icon: Microscope },
+  { value: 'briefcase', labelKey: 'icon.work', Icon: Briefcase },
+  { value: 'palette', labelKey: 'icon.creative', Icon: Palette },
+]
 
 const COLOR_OPTIONS = [
   '#3b82f6',
@@ -71,6 +77,7 @@ function CategoryFormModal({
   onClose: () => void
   onSubmit: (values: CategoryFormValues) => void
 }) {
+  const { t } = useI18n()
   const [nameTh, setNameTh] = useState('')
   const [nameEn, setNameEn] = useState('')
   const [color, setColor] = useState(COLOR_OPTIONS[0])
@@ -88,7 +95,9 @@ function CategoryFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={initial ? 'แก้ไขประเภทงาน' : 'เพิ่มประเภทงาน'}
+      title={
+        initial ? t('categories.editTitle') : t('categories.createTitle')
+      }
       footer={
         <>
           <button
@@ -96,7 +105,7 @@ function CategoryFormModal({
             onClick={onClose}
             type="button"
           >
-            ยกเลิก
+            {t('common.cancel')}
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -109,7 +118,7 @@ function CategoryFormModal({
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            {initial ? 'บันทึก' : 'เพิ่มประเภท'}
+            {initial ? t('categories.save') : t('categories.addSubmit')}
           </button>
         </>
       }
@@ -135,12 +144,12 @@ function CategoryFormModal({
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="category-name-th">
-            ชื่อ (ไทย)
+            {t('categories.nameTh')}
           </label>
           <input
             id="category-name-th"
             className={inputClass}
-            placeholder="เช่น งานส่วนตัว"
+            placeholder={t('categories.nameThPlaceholder')}
             required
             value={nameTh}
             onChange={(event) => setNameTh(event.target.value)}
@@ -149,24 +158,24 @@ function CategoryFormModal({
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="category-name-en">
-            ชื่อ (English)
+            {t('categories.nameEn')}
           </label>
           <input
             id="category-name-en"
             className={inputClass}
-            placeholder="เช่น Personal"
+            placeholder={t('categories.nameEnPlaceholder')}
             value={nameEn}
             onChange={(event) => setNameEn(event.target.value)}
           />
         </div>
 
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">สี</span>
+          <span className="text-sm font-medium">{t('categories.color')}</span>
           <div className="flex flex-wrap items-center gap-2">
             {COLOR_OPTIONS.map((option) => (
               <button
                 key={option}
-                aria-label={`เลือกสี ${option}`}
+                aria-label={`${t('categories.color')} ${option}`}
                 className={[
                   'h-8 w-8 rounded-full border-2 transition',
                   color === option
@@ -179,7 +188,7 @@ function CategoryFormModal({
               />
             ))}
             <input
-              aria-label="กำหนดสีเอง"
+              aria-label={t('categories.color')}
               className="h-8 w-10 cursor-pointer rounded-lg border border-slate-300 bg-transparent dark:border-slate-700"
               type="color"
               value={color}
@@ -189,7 +198,7 @@ function CategoryFormModal({
         </div>
 
         <div className="space-y-1.5">
-          <span className="text-sm font-medium">ไอคอน</span>
+          <span className="text-sm font-medium">{t('categories.icon')}</span>
           <div className="flex flex-wrap gap-2">
             {ICON_OPTIONS.map((option) => (
               <button
@@ -204,7 +213,7 @@ function CategoryFormModal({
                 type="button"
               >
                 <option.Icon className="h-4 w-4" />
-                {option.label}
+                {t(option.labelKey)}
               </button>
             ))}
           </div>
@@ -215,6 +224,7 @@ function CategoryFormModal({
 }
 
 export function CategoryManager({ userId }: { userId: string }) {
+  const { t, locale } = useI18n()
   const { categories, loading, error, refresh } = useCategories(userId)
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [countsLoading, setCountsLoading] = useState(false)
@@ -279,7 +289,7 @@ export function CategoryManager({ userId }: { userId: string }) {
 
   async function handleSubmit(values: CategoryFormValues) {
     if (!values.nameTh) {
-      setFormError('กรุณากรอกชื่อประเภท')
+      setFormError(t('categories.nameRequired'))
       return
     }
 
@@ -329,6 +339,11 @@ export function CategoryManager({ userId }: { userId: string }) {
   }
 
   const deleteCount = deleteTarget ? (counts[deleteTarget.id] ?? 0) : 0
+  const deleteName = deleteTarget
+    ? locale === 'th'
+      ? deleteTarget.name_th
+      : deleteTarget.name_en
+    : ''
 
   return (
     <div>
@@ -336,10 +351,10 @@ export function CategoryManager({ userId }: { userId: string }) {
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold">
             <FolderKanban className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            ประเภทงาน
+            {t('categories.title')}
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            สร้าง แก้ไข และจัดการประเภทงานของคุณ
+            {t('categories.subtitle')}
           </p>
         </div>
         <button
@@ -348,7 +363,7 @@ export function CategoryManager({ userId }: { userId: string }) {
           type="button"
         >
           <Plus className="h-3.5 w-3.5" />
-          เพิ่มประเภท
+          {t('categories.add')}
         </button>
       </div>
 
@@ -367,14 +382,16 @@ export function CategoryManager({ userId }: { userId: string }) {
       {loading ? (
         <div className="mt-4 flex items-center gap-2 text-sm text-slate-400">
           <Loader2 className="h-4 w-4 animate-spin" />
-          กำลังโหลดประเภทงาน…
+          {t('categories.loading')}
         </div>
       ) : categories.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">ยังไม่มีประเภทงาน</p>
+        <p className="mt-4 text-sm text-slate-400">{t('categories.empty')}</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {categories.map((category) => {
             const Icon = categoryIcon(category.icon)
+            const name =
+              locale === 'th' ? category.name_th : category.name_en
             return (
               <li
                 key={category.id}
@@ -389,18 +406,19 @@ export function CategoryManager({ userId }: { userId: string }) {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">
-                      {category.name_th}
+                      {name}
                       {category.is_system ? (
                         <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                          ระบบ
+                          {t('categories.system')}
                         </span>
                       ) : null}
                     </p>
                     <p className="truncate text-xs text-slate-400">
-                      {category.name_en} ·{' '}
                       {countsLoading
-                        ? 'กำลังนับ…'
-                        : `${counts[category.id] ?? 0} Task`}
+                        ? t('categories.counting')
+                        : t('categories.taskCount', {
+                            count: counts[category.id] ?? 0,
+                          })}
                     </p>
                   </div>
                 </div>
@@ -412,7 +430,7 @@ export function CategoryManager({ userId }: { userId: string }) {
                     type="button"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    แก้ไข
+                    {t('common.edit')}
                   </button>
                   <button
                     className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-400 dark:hover:bg-red-500/10 dark:hover:text-red-400"
@@ -420,13 +438,13 @@ export function CategoryManager({ userId }: { userId: string }) {
                     onClick={() => openDelete(category)}
                     title={
                       category.is_system
-                        ? 'ประเภทงานระบบไม่สามารถลบได้'
+                        ? t('categories.system')
                         : undefined
                     }
                     type="button"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    ลบ
+                    {t('common.delete')}
                   </button>
                 </div>
               </li>
@@ -450,24 +468,26 @@ export function CategoryManager({ userId }: { userId: string }) {
       <ConfirmDialog
         busy={deleting}
         danger
-        confirmLabel="ลบประเภท"
+        confirmLabel={t('categories.delete')}
         description={
           deleteTarget
-            ? `ต้องการลบประเภท "${deleteTarget.name_th}" ใช่หรือไม่?` +
-              (deleteCount > 0
-                ? ` มี ${deleteCount} Task อยู่ในประเภทนี้ กรุณาเลือกประเภทปลายทางหรือปล่อยว่างเพื่อย้ายไปเป็น "ไม่มีประเภท"`
-                : '')
+            ? deleteCount > 0
+              ? t('categories.deleteDescriptionWithTasks', {
+                  name: deleteName,
+                  count: deleteCount,
+                })
+              : t('categories.deleteDescription', { name: deleteName })
             : ''
         }
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
         open={deleteTarget !== null}
-        title="ลบประเภทงาน"
+        title={t('categories.deleteTitle')}
       >
         {deleteCount > 0 ? (
           <div className="mt-3 space-y-1.5">
             <label className="text-sm font-medium" htmlFor="reassign-category">
-              ย้าย Task ไปที่
+              {t('categories.reassign')}
             </label>
             <select
               id="reassign-category"
@@ -475,10 +495,10 @@ export function CategoryManager({ userId }: { userId: string }) {
               value={reassignTo}
               onChange={(event) => setReassignTo(event.target.value)}
             >
-              <option value="">ไม่มีประเภท</option>
+              <option value="">{t('common.noCategory')}</option>
               {deleteOptions.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name_th}
+                  {locale === 'th' ? category.name_th : category.name_en}
                 </option>
               ))}
             </select>

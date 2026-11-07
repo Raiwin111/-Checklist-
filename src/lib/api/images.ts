@@ -1,5 +1,6 @@
 import { supabase } from '../supabase'
 import type { TaskImage } from '../../types/database'
+import { tr } from '../messages'
 
 export const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
@@ -16,10 +17,10 @@ type CompressedImage = {
 
 export async function compressImage(file: File): Promise<CompressedImage> {
   if (!file.type.startsWith('image/')) {
-    throw new Error('ไฟล์ที่เลือกไม่ใช่รูปภาพ')
+    throw new Error(tr('error.notImage'))
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error('รูปภาพต้องมีขนาดไม่เกิน 20MB')
+    throw new Error(tr('error.imageTooLarge'))
   }
 
   const bitmap = await createImageBitmap(file)
@@ -38,7 +39,7 @@ export async function compressImage(file: File): Promise<CompressedImage> {
   const context = canvas.getContext('2d')
   if (!context) {
     bitmap.close()
-    throw new Error('เบราว์เซอร์ไม่รองรับการประมวลผลรูปภาพ')
+    throw new Error(tr('error.imageUnsupported'))
   }
 
   context.drawImage(bitmap, 0, 0, width, height)
@@ -48,7 +49,7 @@ export async function compressImage(file: File): Promise<CompressedImage> {
     canvas.toBlob(
       (result) => {
         if (result) resolve(result)
-        else reject(new Error('ไม่สามารถบีบอัดรูปภาพได้'))
+        else reject(new Error(tr('error.imageCompress')))
       },
       'image/webp',
       0.82,

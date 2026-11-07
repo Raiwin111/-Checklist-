@@ -1,3 +1,5 @@
+import { tr } from './messages'
+
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
@@ -13,11 +15,11 @@ export function getErrorMessage(error: unknown): string {
       record.code === '23503' &&
       (message ?? '').includes('tasks_user_id_fkey')
     ) {
-      return 'บัญชีนี้ยังไม่มีข้อมูลโปรไฟล์ในฐานข้อมูล กรุณารัน migration 20261106000200_backfill_profiles.sql แล้วลองใหม่'
+      return tr('error.profileMissing')
     }
 
     if (message) return message
   }
 
-  return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'
+  return tr('error.unknown')
 }

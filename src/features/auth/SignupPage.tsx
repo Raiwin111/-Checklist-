@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
 import { useAuth } from './auth-context'
+import { useI18n } from '../i18n/context'
 
 export function SignupPage() {
   const { session, loading, signUp } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,12 +31,12 @@ export function SignupPage() {
     setError(null)
 
     if (password.length < 8) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      setError(t('auth.passwordMin'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('รหัสผ่านทั้งสองช่องไม่ตรงกัน')
+      setError(t('auth.passwordMismatch'))
       return
     }
 
@@ -62,13 +64,13 @@ export function SignupPage() {
 
   return (
     <AuthShell
-      title="สมัครสมาชิก"
-      subtitle="สร้างบัญชีเพื่อเริ่มจัดการงานของคุณ"
+      title={t('auth.signupTitle')}
+      subtitle={t('auth.signupSubtitle')}
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="email">
-            อีเมล
+            {t('auth.email')}
           </label>
           <input
             id="email"
@@ -83,7 +85,7 @@ export function SignupPage() {
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="password">
-            รหัสผ่าน
+            {t('auth.password')}
           </label>
           <input
             id="password"
@@ -99,7 +101,7 @@ export function SignupPage() {
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="confirm-password">
-            ยืนยันรหัสผ่าน
+            {t('auth.confirmPassword')}
           </label>
           <input
             id="confirm-password"
@@ -120,17 +122,17 @@ export function SignupPage() {
         ) : null}
 
         <button className={primaryButtonClass} type="submit" disabled={submitting}>
-          {submitting ? 'กำลังสร้างบัญชี…' : 'สร้างบัญชี'}
+          {submitting ? t('auth.creating') : t('auth.create')}
         </button>
       </form>
 
       <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-        มีบัญชีอยู่แล้ว?{' '}
+        {t('auth.hasAccount')}{' '}
         <Link
           className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
           to="/login"
         >
-          เข้าสู่ระบบ
+          {t('auth.signInLink')}
         </Link>
       </p>
     </AuthShell>

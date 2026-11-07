@@ -2,9 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
 import { useAuth } from './auth-context'
+import { useI18n } from '../i18n/context'
 
 export function ForgotPasswordPage() {
   const { resetPassword } = useAuth()
+  const { t } = useI18n()
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
@@ -27,26 +29,24 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthShell
-      title="ลืมรหัสผ่าน"
-      subtitle="กรอกอีเมลเพื่อรับลิงก์ตั้งรหัสผ่านใหม่"
+      title={t('auth.forgotTitle')}
+      subtitle={t('auth.forgotSubtitle')}
     >
       {sent ? (
         <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-          <p>
-            หากอีเมลนี้มีบัญชีอยู่ เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปแล้ว
-          </p>
+          <p>{t('auth.forgotSent')}</p>
           <Link
             className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
             to="/login"
           >
-            กลับไปหน้าเข้าสู่ระบบ
+            {t('auth.backToLogin')}
           </Link>
         </div>
       ) : (
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <label className="text-sm font-medium" htmlFor="email">
-              อีเมล
+              {t('auth.email')}
             </label>
             <input
               id="email"
@@ -70,7 +70,7 @@ export function ForgotPasswordPage() {
             type="submit"
             disabled={submitting}
           >
-            {submitting ? 'กำลังส่ง…' : 'ส่งลิงก์ตั้งรหัสผ่านใหม่'}
+            {submitting ? t('auth.sending') : t('auth.sendReset')}
           </button>
         </form>
       )}
@@ -80,7 +80,7 @@ export function ForgotPasswordPage() {
           className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
           to="/login"
         >
-          กลับไปหน้าเข้าสู่ระบบ
+          {t('auth.backToLogin')}
         </Link>
       </p>
     </AuthShell>

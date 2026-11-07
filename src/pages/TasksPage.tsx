@@ -12,12 +12,22 @@ import {
 } from '../lib/api/tasks'
 import { deleteTaskImage } from '../lib/api/images'
 import { getErrorMessage } from '../lib/errors'
+import { useI18n } from '../features/i18n/context'
+import type { TaskStatus } from '../types/database'
 
 const selectClass =
   'rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950'
 
+const STATUS_OPTIONS: TaskStatus[] = [
+  'not_started',
+  'in_progress',
+  'completed',
+  'on_hold',
+]
+
 export function TasksPage() {
   const { user } = useAuth()
+  const { t, locale } = useI18n()
   const { tasks, loading, error, refresh } = useTasks(user?.id)
   const { categories } = useCategories(user?.id)
 
@@ -70,9 +80,9 @@ export function TasksPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">จัดการ Task</h1>
+          <h1 className="text-2xl font-bold">{t('tasks.title')}</h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            ค้นหา กรอง และแก้ไขงานทั้งหมดของคุณ
+            {t('tasks.subtitle')}
           </p>
         </div>
         <Link
@@ -80,7 +90,7 @@ export function TasksPage() {
           to="/tasks/new"
         >
           <PlusCircle className="h-4 w-4" />
-          เพิ่ม Task
+          {t('nav.addTask')}
         </Link>
       </div>
 
@@ -101,7 +111,7 @@ export function TasksPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950"
-            placeholder="ค้นหาชื่องาน…"
+            placeholder={t('tasks.searchPlaceholder')}
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -112,10 +122,10 @@ export function TasksPage() {
           value={categoryFilter}
           onChange={(event) => setCategoryFilter(event.target.value)}
         >
-          <option value="">ทุกประเภท</option>
+          <option value="">{t('tasks.allCategories')}</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
-              {category.name_th}
+              {locale === 'th' ? category.name_th : category.name_en}
             </option>
           ))}
         </select>
@@ -124,11 +134,12 @@ export function TasksPage() {
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
         >
-          <option value="">ทุกสถานะ</option>
-          <option value="not_started">Not Started</option>
-          <option value="in_progress">In Progress</option>
-          <option value="completed">Completed</option>
-          <option value="on_hold">On Hold</option>
+          <option value="">{t('tasks.allStatuses')}</option>
+          {STATUS_OPTIONS.map((status) => (
+            <option key={status} value={status}>
+              {t(`status.${status}`)}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -147,12 +158,12 @@ export function TasksPage() {
             <ListChecks className="h-7 w-7" />
           </div>
           <h2 className="mt-4 text-base font-semibold">
-            {tasks.length === 0 ? 'ยังไม่มี Task' : 'ไม่พบ Task ที่ตรงกับตัวกรอง'}
+            {tasks.length === 0 ? t('tasks.empty') : t('tasks.emptyFiltered')}
           </h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {tasks.length === 0
-              ? 'เริ่มสร้างงานแรกของคุณได้เลย'
-              : 'ลองเปลี่ยนคำค้นหาหรือตัวกรอง'}
+              ? t('tasks.emptyHint')
+              : t('tasks.emptyFilteredHint')}
           </p>
           {tasks.length === 0 ? (
             <Link
@@ -160,7 +171,7 @@ export function TasksPage() {
               to="/tasks/new"
             >
               <PlusCircle className="h-4 w-4" />
-              เพิ่ม Task ใหม่
+              {t('tasks.addNew')}
             </Link>
           ) : null}
         </div>
@@ -181,14 +192,14 @@ export function TasksPage() {
         danger
         description={
           deleteTarget
-            ? `ต้องการลบ "${deleteTarget.title}" ใช่หรือไม่? รูปภาพและข้อมูลที่เกี่ยวข้องจะถูกลบด้วย`
+            ? t('tasks.deleteDescription', { title: deleteTarget.title })
             : ''
         }
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
         open={deleteTarget !== null}
-        title="ลบ Task"
-        confirmLabel="ลบ Task"
+        title={t('tasks.deleteTitle')}
+        confirmLabel={t('tasks.deleteConfirm')}
       />
     </div>
   )

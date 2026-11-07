@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useI18n } from '../features/i18n/context'
 
 export function Modal({
   open,
@@ -14,6 +15,8 @@ export function Modal({
   children: ReactNode
   footer?: ReactNode
 }) {
+  const { t } = useI18n()
+
   useEffect(() => {
     if (!open) return
 
@@ -43,7 +46,7 @@ export function Modal({
         <div className="flex items-start justify-between gap-4">
           <h2 className="text-base font-semibold">{title}</h2>
           <button
-            aria-label="ปิด"
+            aria-label={t('common.close')}
             className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
             onClick={onClose}
             type="button"

@@ -1,5 +1,6 @@
 import { supabase } from '../supabase'
 import { removeAccountFromVault } from '../../features/auth/accountVault'
+import { tr } from '../messages'
 
 type DeleteAccountResponse = {
   deleted?: boolean
@@ -21,14 +22,12 @@ export async function deleteAccount(): Promise<void> {
   )
 
   if (error) {
-    let message = error.message || 'ลบบัญชีไม่สำเร็จ'
+    let message = error.message || tr('error.deleteAccount')
     const context = (error as { context?: Response }).context
     const status = context?.status
 
     if (status === 404 || error.name === 'FunctionsFetchError') {
-      message =
-        'เชื่อมต่อ Edge Function "delete-account" ไม่ได้ — ยังไม่ได้ deploy หรือ deploy ไม่สำเร็จ ' +
-        'กรุณา deploy ฟังก์ชันนี้ใน Supabase Dashboard → Edge Functions แล้วลองใหม่'
+      message = tr('error.edgeNotDeployed')
     }
 
     if (context && status !== 404) {

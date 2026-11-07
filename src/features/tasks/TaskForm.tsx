@@ -12,9 +12,17 @@ import {
   type TaskImageWithUrl,
 } from '../../lib/api/images'
 import { getErrorMessage } from '../../lib/errors'
+import { useI18n } from '../i18n/context'
 
 const inputClass =
   'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950'
+
+const STATUS_OPTIONS: TaskStatus[] = [
+  'not_started',
+  'in_progress',
+  'completed',
+  'on_hold',
+]
 
 type NewImage = {
   id: string
@@ -56,6 +64,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
 }: TaskFormProps) {
+  const { t, locale } = useI18n()
   const [title, setTitle] = useState(initial?.title ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? '')
@@ -116,11 +125,11 @@ export function TaskForm({
 
     for (const file of Array.from(files)) {
       if (!file.type.startsWith('image/')) {
-        setError(`ไฟล์ "${file.name}" ไม่ใช่รูปภาพ`)
+        setError(t('form.notImage', { name: file.name }))
         continue
       }
       if (file.size > MAX_IMAGE_BYTES) {
-        setError(`ไฟล์ "${file.name}" ใหญ่เกิน 20MB`)
+        setError(t('form.tooLarge', { name: file.name }))
         continue
       }
       accepted.push({ id: crypto.randomUUID(), file })
@@ -144,7 +153,7 @@ export function TaskForm({
     setError(null)
 
     if (!title.trim()) {
-      setError('กรุณากรอกชื่องาน')
+      setError(t('form.requiredTitle'))
       return
     }
 
@@ -173,12 +182,12 @@ export function TaskForm({
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="task-title">
-          ชื่องาน
+          {t('form.title')}
         </label>
         <input
           id="task-title"
           className={inputClass}
-          placeholder="เช่น สรุปบทความวิจัย"
+          placeholder={t('form.titlePlaceholder')}
           required
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -187,12 +196,12 @@ export function TaskForm({
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="task-description">
-          รายละเอียด
+          {t('form.description')}
         </label>
         <textarea
           id="task-description"
           className={`${inputClass} min-h-28 resize-y`}
-          placeholder="รายละเอียดเพิ่มเติม"
+          placeholder={t('form.descriptionPlaceholder')}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
         />
@@ -201,7 +210,7 @@ export function TaskForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="task-category">
-            ประเภท
+            {t('form.category')}
           </label>
           <select
             id="task-category"
@@ -209,10 +218,10 @@ export function TaskForm({
             value={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
           >
-            <option value="">ไม่มีประเภท</option>
+            <option value="">{t('common.noCategory')}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.name_th} ({category.name_en})
+                {locale === 'th' ? category.name_th : category.name_en}
               </option>
             ))}
           </select>
@@ -220,7 +229,7 @@ export function TaskForm({
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium" htmlFor="task-status">
-            สถานะ
+            {t('form.status')}
           </label>
           <select
             id="task-status"
@@ -230,10 +239,11 @@ export function TaskForm({
               handleStatusChange(event.target.value as TaskStatus)
             }
           >
-            <option value="not_started">Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="on_hold">On Hold</option>
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {t(`status.${option}`)}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -241,7 +251,7 @@ export function TaskForm({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium" htmlFor="task-progress">
-            ความคืบหน้า
+            {t('form.progress')}
           </label>
           <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
             {progress}%
@@ -257,14 +267,12 @@ export function TaskForm({
           value={progress}
           onChange={(event) => handleProgressChange(Number(event.target.value))}
         />
-        <p className="text-xs text-slate-400">
-          สถานะและเปอร์เซ็นต์จะปรับให้สอดคล้องกันอัตโนมัติ
-        </p>
+        <p className="text-xs text-slate-400">{t('form.autoSyncHint')}</p>
       </div>
 
       {existingImages.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium">รูปภาพที่แนบอยู่</p>
+          <p className="text-sm font-medium">{t('form.existingImages')}</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {existingImages.map((image) => {
               const removed = removedImageIds.includes(image.id)
@@ -284,11 +292,13 @@ export function TaskForm({
                     />
                   ) : (
                     <div className="flex h-28 items-center justify-center text-xs text-slate-400">
-                      ไม่มีตัวอย่าง
+                      {t('common.noPreview')}
                     </div>
                   )}
                   <button
-                    aria-label={removed ? 'ยกเลิกการลบ' : 'ลบรูป'}
+                    aria-label={
+                      removed ? t('form.undoRemove') : t('form.removeImage')
+                    }
                     className="absolute right-1.5 top-1.5 rounded-full bg-slate-950/70 p-1 text-white transition hover:bg-slate-950"
                     onClick={() => toggleRemovedImage(image.id)}
                     type="button"
@@ -301,7 +311,7 @@ export function TaskForm({
                   </button>
                   {removed ? (
                     <span className="absolute inset-x-0 bottom-0 bg-red-600/85 py-1 text-center text-[11px] font-medium text-white">
-                      จะถูกลบเมื่อบันทึก
+                      {t('form.willBeDeleted')}
                     </span>
                   ) : null}
                 </div>
@@ -313,7 +323,7 @@ export function TaskForm({
 
       {previews.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium">รูปใหม่ที่รออัปโหลด</p>
+          <p className="text-sm font-medium">{t('form.newImages')}</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {previews.map((preview) => (
               <div
@@ -326,7 +336,7 @@ export function TaskForm({
                   src={preview.url}
                 />
                 <button
-                  aria-label="เอารูปออก"
+                  aria-label={t('form.removeNew')}
                   className="absolute right-1.5 top-1.5 rounded-full bg-slate-950/70 p-1 text-white transition hover:bg-slate-950"
                   onClick={() =>
                     setNewImages((current) =>
@@ -345,14 +355,14 @@ export function TaskForm({
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="task-images">
-          เพิ่มรูปภาพ
+          {t('form.addImages')}
         </label>
         <label
           className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-7 text-center text-sm text-slate-500 transition hover:border-indigo-400 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-400"
           htmlFor="task-images"
         >
           <ImagePlus className="h-5 w-5" />
-          เลือกรูป (สูงสุด 20MB ต่อรูป, บีบอัดอัตโนมัติ)
+          {t('form.addImagesHint')}
         </label>
         <input
           id="task-images"
@@ -378,7 +388,7 @@ export function TaskForm({
           ) : (
             <Save className="h-4 w-4" />
           )}
-          {submitting ? 'กำลังบันทึก…' : submitLabel}
+          {submitting ? t('form.saving') : submitLabel}
         </button>
 
         {onCancel ? (
@@ -387,7 +397,7 @@ export function TaskForm({
             onClick={onCancel}
             type="button"
           >
-            ยกเลิก
+            {t('common.cancel')}
           </button>
         ) : null}
       </div>

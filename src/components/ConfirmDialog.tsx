@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 import { Modal } from './Modal'
+import { useI18n } from '../features/i18n/context'
 
 export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'ยืนยัน',
-  cancelLabel = 'ยกเลิก',
+  confirmLabel,
+  cancelLabel,
   danger = false,
   busy = false,
   children,
@@ -24,6 +25,8 @@ export function ConfirmDialog({
   onConfirm: () => void
   onClose: () => void
 }) {
+  const { t } = useI18n()
+
   return (
     <Modal
       open={open}
@@ -36,7 +39,7 @@ export function ConfirmDialog({
             onClick={onClose}
             type="button"
           >
-            {cancelLabel}
+            {cancelLabel ?? t('common.cancel')}
           </button>
           <button
             className={[
@@ -49,7 +52,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             type="button"
           >
-            {busy ? 'กำลังดำเนินการ…' : confirmLabel}
+            {busy ? t('common.working') : (confirmLabel ?? t('common.confirm'))}
           </button>
         </>
       }
