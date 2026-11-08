@@ -3,6 +3,7 @@ import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../features/auth/auth-context'
 import { syncManager, type SyncStatus } from '../lib/offline/sync'
 import { getPendingSyncCount } from '../lib/offline/local'
+import { useQueueChangeRefresh } from '../lib/offline/syncEvents'
 import { useI18n } from '../features/i18n/context'
 
 export function SyncStatus() {
@@ -10,10 +11,18 @@ export function SyncStatus() {
   const { t } = useI18n()
   const [status, setStatus] = useState<SyncStatus>({ kind: 'idle' })
   const [pendingCount, setPendingCount] = useState(0)
+  const [tick, setTick] = useState(0)
 
-  const handleStatusChange = useCallback((next: SyncStatus) => {
-    setStatus(next)
-  }, [])
+  const bump = useCallback(() => setTick((value) => value + 1), [])
+  useQueueChangeRefresh(bump)
+
+  const handleStatusChange = useCallback(
+    (next: SyncStatus) => {
+      setStatus(next)
+      setTick((value) => value + 1)
+    },
+    [],
+  )
 
   useEffect(() => {
     if (!user) return
@@ -30,7 +39,7 @@ export function SyncStatus() {
     return () => {
       active = false
     }
-  }, [user])
+  }, [user, tick])
 
   const hasConflict = status.kind === 'conflict'
   const isSyncing = status.kind === 'syncing'

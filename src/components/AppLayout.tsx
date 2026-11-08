@@ -14,6 +14,7 @@ import { listAccounts } from '../features/auth/accountVault'
 import { useI18n } from '../features/i18n/context'
 import { useOnlineStatus } from '../lib/offline/network'
 import { syncManager } from '../lib/offline/sync'
+import { notifySyncComplete } from '../lib/offline/syncEvents'
 import { SyncStatus } from '../components/SyncStatus'
 import type { TranslationKey } from '../features/i18n/dictionary'
 
@@ -48,7 +49,18 @@ export function AppLayout() {
   // Auto-sync when reconnecting
   useEffect(() => {
     if (!user || !online) return
-    void syncManager.startSync(user.id)
+
+    let active = true
+    void syncManager.startSync(user.id).then((result) => {
+      if (!active) return
+      if (result.status === 'completed' && result.processed > 0) {
+        notifySyncComplete()
+      }
+    })
+
+    return () => {
+      active = false
+    }
   }, [user, online])
 
   async function handleSignOut() {

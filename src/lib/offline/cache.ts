@@ -15,6 +15,11 @@ export type SyncQueueItem = {
   payload: unknown
   createdAt: string
   attempts: number
+  /**
+   * Server revision the edit was based on. If the server revision has moved
+   * past this value when the queue is replayed, another device edited first.
+   */
+  baseRevision?: number
   lastAttemptAt?: string
   error?: string
 }
@@ -30,6 +35,12 @@ class OfflineDatabase extends Dexie {
       snapshots: 'key',
       localTasks: 'id, user_id, status, category_id, server_updated_at',
       syncQueue: 'id, userId, operation, createdAt',
+    })
+    // v3 adds the taskId index used to coalesce queued edits per task.
+    this.version(3).stores({
+      snapshots: 'key',
+      localTasks: 'id, user_id, status, category_id, server_updated_at',
+      syncQueue: 'id, userId, taskId, operation, createdAt',
     })
   }
 }

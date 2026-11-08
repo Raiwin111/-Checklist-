@@ -4,7 +4,7 @@
 
 ## 1. หลักการ
 
-- **Local-first (渐进):** MVP อ่านข้อมูลจาก cache ได้เมื่อออฟไลน์ ส่วนการเขียนออฟไลน์เต็มรูปแบบอยู่ใน Phase 6B
+- **Local-first (渐进):** อ่านจาก cache เมื่อออฟไลน์ (Phase 6A) และเขียน/ลบแบบออฟไลน์ได้ พร้อมคิวซิงก์เมื่อกลับมาออนไลน์ (Phase 6B)
 - **Single source of truth ฝั่ง UI:** React อ่าน/เขียนผ่าน service layer และ IndexedDB ใน Phase 6
 - **Cloud เป็นปลายทางของการซิงก์:** Supabase PostgreSQL + RLS + Storage
 - **ไม่มีความลับฝั่ง Browser:** SerpAPI และ service_role อยู่ใน Edge Function เท่านั้น
@@ -20,7 +20,7 @@
 | Issue tracker | ไม่เกี่ยวข้องกับแอป (ใช้เฉพาะ skills) |
 | Search | SerpAPI ผ่าน Edge Function |
 | Classification | Rule-based, `is_ai_generated = false` |
-| Offline MVP | อ่านจาก cache เท่านั้น |
+| Offline MVP | อ่านจาก cache (6A) + เขียน/ลบออฟไลน์และซิงก์อัตโนมัติ (6B) |
 | Conflict | Last-write-wins + แจ้งเตือน + เก็บสำเนาใน `sync_conflicts` |
 | Category | เพิ่ม/แก้/ลบเองได้; 3 ประเภทระบบลบไม่ได้ |
 | Status ↔ Progress | อัตโนมัติตามกฎในหัวข้อ 4 |
@@ -43,8 +43,8 @@ React UI
   │
   ├── Search ──► Edge Function ──► SerpAPI ──► rule-based classifier
   │
-  └── Offline (Phase 6A) ──► IndexedDB cache (read-only)
-        └── Phase 6B ──► Sync queue ──► conflict detection (revision)
+  └── Offline (Phase 6A/6B) ──► IndexedDB cache + localTasks
+        └── syncQueue ──► conflict detection (revision) ──► sync_conflicts
 ```
 
 ## 4. กฎ Status ↔ Progress
@@ -101,7 +101,7 @@ Edge Function `delete-account` (Phase 3):
 | ความเสี่ยง | แนวทาง |
 |---|---|
 | Refresh token ใน localStorage | CSP, ไม่ใช้สคริปต์ภายนอก, พิจารณา PIN ภายหลัง |
-| Offline CRUD (Phase 6B) | แยกแผนทดสอบและอนุมัติอีกครั้ง |
+| Offline CRUD (Phase 6B) | ทดสอบด้วย Vitest (local CRUD, merge, sync, conflict) และคู่มือ manual test ใน `docs/deploy.md` |
 | รูป 20MB × ไม่จำกัดจำนวน | บีบอัดฝั่ง Client, เฝ้า Storage quota |
 | Rule-based classification | แสดง Unknown/Unverified อย่างชัดเจน |
 | RLS ตั้งผิด | เขียน test เคสข้ามผู้ใช้ก่อน deploy |

@@ -80,6 +80,8 @@ npm run dev
 | `npm run build` | Type-check + production build |
 | `npm run preview` | เปิด preview ของ build |
 | `npm run lint` | ตรวจ ESLint |
+| `npm test` | รันชุดทดสอบทั้งหมด (Vitest) |
+| `npm run test:watch` | รันทดสอบแบบ watch |
 
 ## สถานะการพัฒนา
 
@@ -90,7 +92,16 @@ npm run dev
 - [x] Phase 5 — Search + Rule-based classification (โค้ดเสร็จ, Edge Function `search` deploy แล้ว)
 - [x] Phase 6A — PWA + offline read cache
 - [x] Phase 6B — Offline CRUD + sync (เขียนได้ตอนออฟไลน์, ซิงก์อัตโนมัติเมื่อกลับออนไลน์, last-write-wins + sync_conflicts)
-- [ ] Phase 7 — Testing & Deploy
+- [x] Phase 7 — Testing (Vitest 58 tests) + Deploy config (Vercel)
+  - ดูขั้นตอน deploy ทั้งหมดใน [`docs/deploy.md`](docs/deploy.md)
+
+## Deploy
+
+Production ใช้ **Vercel** (static build + SPA rewrite) และ **Supabase** เป็น backend
+
+1. ตั้งค่า environment variables บน Vercel: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+2. ตั้ง Site URL + Redirect URLs ใน Supabase Auth เป็นโดเมน production
+3. Deploy แล้วทำตาม checklist ใน [`docs/deploy.md`](docs/deploy.md)
 
 ## ความปลอดภัย
 

@@ -31,9 +31,9 @@ const th = {
 
   'offline.badge': 'ออฟไลน์',
   'offline.banner':
-    'โหมดออฟไลน์ — กำลังแสดงข้อมูลจากแคช และยังบันทึกการแก้ไขไม่ได้',
+    'โหมดออฟไลน์ — กำลังแสดงข้อมูลจากแคช การแก้ไขจะถูกเก็บไว้ในเครื่องและซิงก์เมื่อกลับมาออนไลน์',
   'offline.readOnly':
-    'โหมดออฟไลน์อ่านได้อย่างเดียว กรุณาเชื่อมต่ออินเทอร์เน็ตก่อนแก้ไขข้อมูล',
+    'การกระทำนี้ต้องเชื่อมต่ออินเทอร์เน็ต กรุณาเชื่อมต่อก่อนทำรายการ',
   'offline.noCache':
     'ไม่มีข้อมูลแคชสำหรับโหมดออฟไลน์ กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วเปิดหน้านี้อีกครั้ง',
   'offline.cachedAt': 'กำลังแสดงข้อมูลแคชเมื่อ {time}',
@@ -46,6 +46,8 @@ const th = {
   'offline.createdOffline': 'สร้าง "{title}" ไว้ในเครื่องแล้ว จะซิงก์เมื่อกลับมาออนไลน์',
   'offline.updatedOffline': 'แก้ไขในเครื่องแล้ว จะซิงก์เมื่อกลับมาออนไลน์',
   'offline.deletedOffline': 'ลบในเครื่องแล้ว จะซิงก์เมื่อกลับมาออนไลน์',
+  'offline.imagesSkipped':
+    'รูปภาพ {count} รูปยังไม่ถูกบันทึก — ต้องเชื่อมต่ออินเทอร์เน็ตเพื่ออัปโหลด',
 
   'nav.dashboard': 'Dashboard',
   'nav.addTask': 'เพิ่ม Task',
@@ -351,9 +353,9 @@ const en: { [K in keyof typeof th]: string } = {
 
   'offline.badge': 'Offline',
   'offline.banner':
-    'Offline mode — showing cached data. Changes cannot be saved right now.',
+    'Offline mode — showing cached data. Changes are saved on this device and sync when you reconnect.',
   'offline.readOnly':
-    'Offline mode is read-only. Connect to the internet before making changes.',
+    'This action needs an internet connection. Please reconnect and try again.',
   'offline.noCache':
     'No cached data is available offline. Connect to the internet, then open this page again.',
   'offline.cachedAt': 'Showing cached data from {time}',
@@ -366,6 +368,8 @@ const en: { [K in keyof typeof th]: string } = {
   'offline.createdOffline': 'Created "{title}" locally. Will sync when back online',
   'offline.updatedOffline': 'Updated locally. Will sync when back online',
   'offline.deletedOffline': 'Deleted locally. Will sync when back online',
+  'offline.imagesSkipped':
+    '{count} image(s) were not saved — connect to the internet to upload them.',
 
   'nav.dashboard': 'Dashboard',
   'nav.addTask': 'Add Task',

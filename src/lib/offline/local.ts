@@ -1,4 +1,5 @@
 import { getOfflineDatabase, type SyncQueueItem } from './cache'
+import { notifyQueueChanged } from './syncEvents'
 import { normalizeStatusProgress } from '../../features/tasks/statusProgress'
 import type { Task, TaskStatus } from '../../types/database'
 
@@ -60,6 +61,7 @@ export async function createLocalTask(
     },
     createdAt: now,
     attempts: 0,
+    baseRevision: 0,
   }
 
   await db.transaction('rw', db.localTasks, db.syncQueue, async () => {
@@ -67,6 +69,7 @@ export async function createLocalTask(
     await db.syncQueue.put(queueItem)
   })
 
+  notifyQueueChanged()
   return newTask
 }
 
@@ -74,15 +77,19 @@ export async function updateLocalTask(
   userId: string,
   taskId: string,
   input: Partial<LocalTaskInput>,
+  fallback?: Task,
 ): Promise<Task | null> {
   const db = getOfflineDatabase(userId)
-  const existing = await db.localTasks.get(taskId)
+  const existing = (await db.localTasks.get(taskId)) ?? fallback
   if (!existing) return null
 
-  const normalized = normalizeStatusProgress({
-    status: input.status ?? existing.status,
-    progress: input.progress ?? existing.progress,
-  })
+  const normalized = normalizeStatusProgress(
+    {
+      status: input.status ?? existing.status,
+      progress: input.progress ?? existing.progress,
+    },
+    { status: existing.status, progress: existing.progress },
+  )
 
   const now = new Date().toISOString()
   const updated: Task = {
@@ -117,14 +124,19 @@ export async function updateLocalTask(
     operation: existingCreate ? 'create' : 'update',
     userId,
     taskId,
-    payload: existingCreate || existingUpdate
-      ? {
-          ...(((existingCreate ?? existingUpdate)?.payload as object) ?? {}),
-          ...input,
-        }
-      : input,
+    payload:
+      existingCreate || existingUpdate
+        ? {
+            ...(((existingCreate ?? existingUpdate)?.payload as object) ?? {}),
+            ...input,
+          }
+        : input,
     createdAt: existingCreate?.createdAt ?? existingUpdate?.createdAt ?? now,
     attempts: 0,
+    // Revision the edit was based on, used for conflict detection on sync.
+    baseRevision: existingCreate
+      ? 0
+      : (existingUpdate?.baseRevision ?? existing.revision),
   }
 
   await db.transaction('rw', db.localTasks, db.syncQueue, async () => {
@@ -135,15 +147,17 @@ export async function updateLocalTask(
     await db.syncQueue.put(queueItem)
   })
 
+  notifyQueueChanged()
   return updated
 }
 
 export async function deleteLocalTask(
   userId: string,
   taskId: string,
+  fallback?: Task,
 ): Promise<void> {
   const db = getOfflineDatabase(userId)
-  const existing = await db.localTasks.get(taskId)
+  const existing = (await db.localTasks.get(taskId)) ?? fallback
   if (!existing) return
 
   const now = new Date().toISOString()
@@ -173,11 +187,13 @@ export async function deleteLocalTask(
     payload: {},
     createdAt: now,
     attempts: 0,
+    baseRevision: pendingCreate ? 0 : existing.revision,
   }
 
   await db.transaction('rw', db.localTasks, db.syncQueue, async () => {
     await db.localTasks.put(deleted)
     if (pendingCreate) {
+      // The task never reached the server: discard its create/update queue.
       await db.syncQueue.delete(pendingCreate.id)
       await db.syncQueue.bulkDelete(pendingUpdates.map((item) => item.id))
       return
@@ -185,12 +201,35 @@ export async function deleteLocalTask(
     await db.syncQueue.bulkDelete(pendingUpdates.map((item) => item.id))
     await db.syncQueue.put(queueItem)
   })
+
+  notifyQueueChanged()
 }
 
 export async function getLocalTasks(userId: string): Promise<Task[]> {
-  const db = getOfflineDatabase(userId)
-  const tasks = await db.localTasks.toArray()
-  return tasks.filter((t) => !t.deleted_at)
+  const database = getOfflineDatabase(userId)
+  const tasks = await database.localTasks.toArray()
+  return tasks.filter((task) => !task.deleted_at)
+}
+
+/** Includes soft-deleted local rows so callers can hide them from the UI. */
+export async function getAllLocalTasks(userId: string): Promise<Task[]> {
+  return getOfflineDatabase(userId).localTasks.toArray()
+}
+
+export async function getLocalTask(
+  userId: string,
+  taskId: string,
+): Promise<Task | undefined> {
+  return getOfflineDatabase(userId).localTasks.get(taskId)
+}
+
+export async function getPendingTaskIds(userId: string): Promise<Set<string>> {
+  const items = await getOfflineDatabase(userId).syncQueue.toArray()
+  return new Set(
+    items
+      .map((item) => item.taskId)
+      .filter((taskId): taskId is string => Boolean(taskId)),
+  )
 }
 
 export async function getPendingSyncCount(userId: string): Promise<number> {

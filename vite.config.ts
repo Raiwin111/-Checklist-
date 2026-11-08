@@ -9,7 +9,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: [
+        'favicon.svg',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/apple-touch-icon.png',
+      ],
       manifest: {
         name: 'Personal Task & Research',
         short_name: 'Tasks',
@@ -19,11 +24,41 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         lang: 'th',
-        icons: [],
+        icons: [
+          {
+            src: 'icons/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
       },
       devOptions: {
         enabled: false,
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+          offline: ['dexie'],
+        },
+      },
+    },
+  },
 })

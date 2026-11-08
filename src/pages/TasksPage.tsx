@@ -75,7 +75,7 @@ export function TasksPage() {
         )
         await softDeleteTask(deleteTarget.id, user.id)
       } else {
-        await deleteLocalTask(user.id, deleteTarget.id)
+        await deleteLocalTask(user.id, deleteTarget.id, deleteTarget)
         setActionError(tr('offline.deletedOffline'))
       }
       setDeleteTarget(null)

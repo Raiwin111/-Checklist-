@@ -6,6 +6,7 @@ import {
 import { getErrorMessage } from '../../lib/errors'
 import { cacheKeys, readCache, writeCache } from '../../lib/offline/cache'
 import { useOnlineStatus } from '../../lib/offline/network'
+import { useSyncCompleteRefresh } from '../../lib/offline/syncEvents'
 import { tr } from '../../lib/messages'
 
 export function useDashboard(userId: string | undefined) {
@@ -18,6 +19,7 @@ export function useDashboard(userId: string | undefined) {
   const [version, setVersion] = useState(0)
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
+  useSyncCompleteRefresh(refresh)
 
   useEffect(() => {
     if (!userId) {

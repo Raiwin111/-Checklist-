@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchTasks, type TaskWithRelations } from '../../lib/api/tasks'
 import { cacheKeys, readCache, writeCache } from '../../lib/offline/cache'
-import { getLocalTasks, isLocalId } from '../../lib/offline/local'
+import { getAllLocalTasks, getPendingTaskIds } from '../../lib/offline/local'
+import { mergeTaskLists } from '../../lib/offline/merge'
 import { useOnlineStatus } from '../../lib/offline/network'
+import { useSyncCompleteRefresh } from '../../lib/offline/syncEvents'
 
 export function useTasks(userId: string | undefined) {
   const online = useOnlineStatus()
@@ -15,6 +17,7 @@ export function useTasks(userId: string | undefined) {
   const [version, setVersion] = useState(0)
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
+  useSyncCompleteRefresh(refresh)
 
   useEffect(() => {
     if (!userId) {
@@ -27,31 +30,23 @@ export function useTasks(userId: string | undefined) {
     setError(null)
 
     async function load() {
-      let displayTasks: TaskWithRelations[] = []
+      const localTasks = await getAllLocalTasks(userId!)
+      const pendingIds = await getPendingTaskIds(userId!)
+
+      let base: TaskWithRelations[] = []
       let isFromCache = false
       let cachedTime: string | null = null
 
       if (online) {
         try {
-          const remote = await fetchTasks(userId!)
-          const local = await getLocalTasks(userId!)
-          const remoteIds = new Set(remote.map((t) => t.id))
-          const pending = local.filter(
-            (t) => isLocalId(t.id) && !remoteIds.has(t.id),
-          )
-          displayTasks = [...remote, ...pending] as TaskWithRelations[]
-          isFromCache = false
-          void writeCache(userId!, cacheKeys.tasks, remote)
+          base = await fetchTasks(userId!)
+          void writeCache(userId!, cacheKeys.tasks, base)
         } catch {
           const cached = await readCache<TaskWithRelations[]>(
             userId!,
             cacheKeys.tasks,
           )
-          const local = await getLocalTasks(userId!)
-          displayTasks = [
-            ...(cached?.data ?? []),
-            ...local.filter((t) => isLocalId(t.id)),
-          ] as TaskWithRelations[]
+          base = cached?.data ?? []
           isFromCache = true
           cachedTime = cached?.cachedAt ?? null
         }
@@ -60,20 +55,25 @@ export function useTasks(userId: string | undefined) {
           userId!,
           cacheKeys.tasks,
         )
-        const local = await getLocalTasks(userId!)
-        displayTasks = [
-          ...(cached?.data ?? []),
-          ...local.filter((t) => isLocalId(t.id)),
-        ] as TaskWithRelations[]
+        base = cached?.data ?? []
         isFromCache = true
         cachedTime = cached?.cachedAt ?? null
       }
+
+      // Offline the cache is always older than the local table, so every
+      // local row wins. Online only pending edits should override the server.
+      const { tasks: displayTasks, pendingCount } = mergeTaskLists(
+        base,
+        localTasks,
+        pendingIds,
+        { overrideAll: !online || isFromCache },
+      )
 
       if (!active) return
       setTasks(displayTasks)
       setFromCache(isFromCache)
       setCachedAt(cachedTime)
-      setHasPendingChanges(displayTasks.some((t) => isLocalId(t.id)))
+      setHasPendingChanges(pendingCount > 0)
       setLoading(false)
     }
 

@@ -125,15 +125,28 @@ export function TaskDetailPage() {
         setEditing(false)
         refresh()
       } else {
-        await updateLocalTask(user.id, task.id, {
-          title: values.title,
-          description: values.description,
-          categoryId: values.categoryId || null,
-          status: values.status,
-          progress: values.progress,
-        })
+        await updateLocalTask(
+          user.id,
+          task.id,
+          {
+            title: values.title,
+            description: values.description,
+            categoryId: values.categoryId || null,
+            status: values.status,
+            progress: values.progress,
+          },
+          task,
+        )
         setEditing(false)
-        setActionError(tr('offline.updatedOffline'))
+        setActionError(
+          values.newImages.length > 0 || values.removedImageIds.length > 0
+            ? t('offline.imagesSkipped', {
+                count:
+                  values.newImages.length + values.removedImageIds.length,
+              })
+            : tr('offline.updatedOffline'),
+        )
+        refresh()
       }
     } finally {
       setSubmitting(false)
@@ -153,7 +166,7 @@ export function TaskDetailPage() {
         )
         await softDeleteTask(task.id, user.id)
       } else {
-        await deleteLocalTask(user.id, task.id)
+        await deleteLocalTask(user.id, task.id, task)
         setActionError(tr('offline.deletedOffline'))
       }
       navigate('/tasks', { replace: true })

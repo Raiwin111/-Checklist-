@@ -9,7 +9,6 @@ import { isOnline } from '../lib/offline/network'
 import { uploadTaskImage } from '../lib/api/images'
 import { logTaskEvent } from '../lib/api/events'
 import { useI18n } from '../features/i18n/context'
-import { tr } from '../lib/messages'
 
 export function AddTaskPage() {
   const { user } = useAuth()
@@ -21,12 +20,10 @@ export function AddTaskPage() {
     error: categoriesError,
   } = useCategories(user?.id)
   const [submitting, setSubmitting] = useState(false)
-  const [offlineNotice, setOfflineNotice] = useState<string | null>(null)
 
   async function handleSubmit(values: TaskFormValues) {
     if (!user) return
     setSubmitting(true)
-    setOfflineNotice(null)
 
     try {
       const task = isOnline()
@@ -46,12 +43,18 @@ export function AddTaskPage() {
           })
 
       if (!isOnline()) {
-        setOfflineNotice(
-          tr('offline.createdOffline', {
-            title: task.title,
-          }),
-        )
-        navigate('/tasks', { replace: true })
+        const skippedImages = values.newImages.length
+        navigate(`/tasks/${task.id}`, {
+          replace: true,
+          state:
+            skippedImages > 0
+              ? {
+                  warning: t('offline.imagesSkipped', {
+                    count: skippedImages,
+                  }),
+                }
+              : undefined,
+        })
         return
       }
 
@@ -101,12 +104,6 @@ export function AddTaskPage() {
           {t('add.subtitle')}
         </p>
       </div>
-
-      {offlineNotice ? (
-        <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-          {offlineNotice}
-        </div>
-      ) : null}
 
       {categoriesError ? (
         <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">

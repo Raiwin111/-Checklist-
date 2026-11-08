@@ -5,8 +5,10 @@ import {
   type TaskWithRelations,
 } from '../../lib/api/tasks'
 import { cacheKeys, readCache, writeCache } from '../../lib/offline/cache'
-import { getLocalTasks, isLocalId } from '../../lib/offline/local'
+import { getLocalTask, getPendingTaskIds } from '../../lib/offline/local'
+import { toTaskWithRelations } from '../../lib/offline/merge'
 import { useOnlineStatus } from '../../lib/offline/network'
+import { useSyncCompleteRefresh } from '../../lib/offline/syncEvents'
 import type { TaskEvent } from '../../types/database'
 
 type CachedTaskDetail = {
@@ -29,6 +31,7 @@ export function useTaskDetail(
   const [version, setVersion] = useState(0)
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
+  useSyncCompleteRefresh(refresh)
 
   useEffect(() => {
     if (!taskId || !userId) {
@@ -42,10 +45,15 @@ export function useTaskDetail(
     setError(null)
 
     async function load() {
+      const localTask = await getLocalTask(userId!, taskId!)
+      const pending = (await getPendingTaskIds(userId!)).has(taskId!)
+      const locallyDeleted = Boolean(localTask?.deleted_at) && pending
+
       let nextTask: TaskWithRelations | null = null
       let nextEvents: TaskEvent[] = []
       let isFromCache = false
       let cachedTime: string | null = null
+      let pendingChanges = pending && Boolean(localTask)
 
       if (online) {
         try {
@@ -53,59 +61,48 @@ export function useTaskDetail(
             fetchTask(taskId!),
             fetchTaskEvents(taskId!),
           ])
-          nextTask = fetchedTask
           nextEvents = fetchedEvents
-          isFromCache = false
 
-          // Merge with local pending changes if this task has a local version
-          const localTasks = await getLocalTasks(userId!)
-          const localTask = localTasks.find((t) => t.id === taskId)
-          if (localTask && isLocalId(localTask.id)) {
-            nextTask = localTask as TaskWithRelations
-            setHasPendingChanges(true)
+          if (locallyDeleted) {
+            nextTask = null
+          } else if (pending && localTask) {
+            nextTask = toTaskWithRelations(localTask, fetchedTask)
           } else {
-            setHasPendingChanges(false)
+            nextTask = fetchedTask
           }
-
-          void writeCache(userId!, cacheKey, {
-            task: nextTask,
-            events: nextEvents,
-          })
         } catch {
           const cached = await readCache<CachedTaskDetail>(userId!, cacheKey)
-          const localTasks = await getLocalTasks(userId!)
-          const localTask = localTasks.find((t) => t.id === taskId)
-
           if (cached) {
-            nextTask = cached.data.task
             nextEvents = cached.data.events
             isFromCache = true
             cachedTime = cached.cachedAt
           }
-          if (localTask && isLocalId(localTask.id)) {
-            nextTask = localTask as TaskWithRelations
-            setHasPendingChanges(true)
-          } else {
-            setHasPendingChanges(false)
-          }
+          nextTask = locallyDeleted
+            ? null
+            : localTask
+              ? toTaskWithRelations(localTask, cached?.data.task ?? null)
+              : (cached?.data.task ?? null)
         }
       } else {
         const cached = await readCache<CachedTaskDetail>(userId!, cacheKey)
-        const localTasks = await getLocalTasks(userId!)
-        const localTask = localTasks.find((t) => t.id === taskId)
-
-        if (localTask && isLocalId(localTask.id)) {
-          nextTask = localTask as TaskWithRelations
-          setHasPendingChanges(true)
-        } else if (cached) {
-          nextTask = cached.data.task
+        if (cached) {
           nextEvents = cached.data.events
           isFromCache = true
           cachedTime = cached.cachedAt
-          setHasPendingChanges(false)
-        } else {
-          setHasPendingChanges(false)
         }
+        nextTask = locallyDeleted
+          ? null
+          : localTask
+            ? toTaskWithRelations(localTask, cached?.data.task ?? null)
+            : (cached?.data.task ?? null)
+        pendingChanges = pending
+      }
+
+      if (online && !isFromCache && nextTask) {
+        void writeCache(userId!, cacheKey, {
+          task: nextTask,
+          events: nextEvents,
+        })
       }
 
       if (!active) return
@@ -113,6 +110,7 @@ export function useTaskDetail(
       setEvents(nextEvents)
       setFromCache(isFromCache)
       setCachedAt(cachedTime)
+      setHasPendingChanges(pendingChanges)
       setLoading(false)
     }
 

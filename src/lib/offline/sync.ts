@@ -95,9 +95,20 @@ export class SyncManager {
       const hasConflict = results.some((r) => r.status === 'conflict')
       const hasError = results.some((r) => r.status === 'error')
 
-      this.emit({
-        kind: hasConflict ? 'conflict' : hasError ? 'error' : 'synced',
-      } as SyncStatus)
+      if (hasConflict) {
+        this.emit({ kind: 'conflict' })
+      } else if (hasError) {
+        const firstError = results.find((r) => r.status === 'error')
+        this.emit({
+          kind: 'error',
+          error:
+            firstError?.status === 'error'
+              ? firstError.error
+              : 'sync-failed',
+        })
+      } else {
+        this.emit({ kind: 'synced' })
+      }
 
       return {
         status: 'completed',
@@ -130,6 +141,24 @@ export class SyncManager {
     }
   }
 
+  /**
+   * True when the server moved past the revision this edit was based on,
+   * i.e. another device wrote the same task while this one was offline.
+   */
+  private hasRevisionConflict(
+    item: SyncQueueItem,
+    serverTask: Task,
+    localTask: Task,
+  ): boolean {
+    const serverRevision = serverTask.revision ?? 0
+    const baseRevision = item.baseRevision
+    if (baseRevision !== undefined) {
+      return serverRevision > baseRevision
+    }
+    // Legacy queue items created before baseRevision existed.
+    return serverRevision > (localTask.revision ?? 0)
+  }
+
   private async processCreateOperation(
     userId: string,
     item: SyncQueueItem,
@@ -151,18 +180,26 @@ export class SyncManager {
     })
 
     const db = getOfflineDatabase(userId)
-    const localTask = await db.localTasks.get(item.taskId ?? '')
-    if (localTask) {
-      const replaced: Task = {
-        ...localTask,
-        id: newTask.id,
-        server_updated_at: newTask.server_updated_at,
-        revision: newTask.revision,
-      }
-      await db.localTasks.put(replaced)
-    }
 
-    await db.syncQueue.delete(item.id)
+    // Swap the local placeholder id for the server id, removing the old row
+    // so the task cannot appear twice in the list.
+    await db.transaction('rw', db.localTasks, db.syncQueue, async () => {
+      const localTask = await db.localTasks.get(item.taskId ?? '')
+      if (localTask) {
+        await db.localTasks.put({
+          ...localTask,
+          id: newTask.id,
+          server_updated_at: newTask.server_updated_at,
+          client_updated_at: newTask.client_updated_at,
+          revision: newTask.revision,
+          deleted_at: newTask.deleted_at,
+        })
+        if (item.taskId && item.taskId !== newTask.id) {
+          await db.localTasks.delete(item.taskId)
+        }
+      }
+      await db.syncQueue.delete(item.id)
+    })
 
     return {
       status: 'success',
@@ -187,20 +224,20 @@ export class SyncManager {
       return { status: 'skipped', reason: 'task-not-found' }
     }
 
-    // Conflict detection: fetch current server state
     const serverTask = await fetchTask(item.taskId)
 
-    if (
-      serverTask &&
-      (serverTask.revision ?? 0) > (localTask.revision ?? 0)
-    ) {
-      // Last-write-wins: server wins. Save local (losing) payload as conflict.
-      await this.recordConflict(userId, item.taskId, localTask)
+    if (!serverTask) {
+      // Deleted on another device while this edit waited in the queue.
+      await db.syncQueue.delete(item.id)
+      return { status: 'skipped', reason: 'task-deleted-on-server' }
+    }
 
-      // Overwrite local with server version (LWW)
+    if (this.hasRevisionConflict(item, serverTask, localTask)) {
+      // Last-write-wins: the server copy wins. Keep the losing local copy as
+      // a conflict snapshot so nothing is silently lost.
+      await this.recordConflict(userId, item.taskId, localTask)
       await db.localTasks.put(serverTask)
       await db.syncQueue.delete(item.id)
-
       return { status: 'conflict', taskId: item.taskId, serverTask }
     }
 
@@ -221,8 +258,8 @@ export class SyncManager {
         categoryId: payload.categoryId,
         status: (payload.status ?? localTask.status) as Task['status'],
         progress: payload.progress,
-      } as Parameters<typeof updateTask>[2],
-      localTask,
+      },
+      serverTask,
     )
 
     await db.localTasks.put(updatedTask)
@@ -248,11 +285,23 @@ export class SyncManager {
 
     const serverTask = await fetchTask(item.taskId)
 
-    if (
-      serverTask &&
-      (serverTask.deleted_at ?? null) === null &&
-      (serverTask.revision ?? 0) > (localTask?.revision ?? 0)
-    ) {
+    if (!serverTask) {
+      // Already deleted on the server (or never made it there).
+      await db.syncQueue.delete(item.id)
+      if (localTask) {
+        await db.localTasks.put({
+          ...localTask,
+          deleted_at: localTask.deleted_at ?? new Date().toISOString(),
+        })
+      }
+      return {
+        status: 'success',
+        taskId: item.taskId,
+        operation: 'delete',
+      }
+    }
+
+    if (this.hasRevisionConflict(item, serverTask, localTask ?? serverTask)) {
       await this.recordConflict(userId, item.taskId, localTask ?? null)
       await db.localTasks.put(serverTask)
       await db.syncQueue.delete(item.id)
@@ -285,12 +334,14 @@ export class SyncManager {
         ? {
             id: localTask.id,
             title: localTask.title,
+            description: localTask.description,
+            category_id: localTask.category_id,
             status: localTask.status,
             progress: localTask.progress,
             client_updated_at: localTask.client_updated_at,
             revision: localTask.revision,
           }
-        : null,
+        : {},
       resolved_at: null,
     })
 
