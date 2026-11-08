@@ -1,21 +1,20 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ImagePlus, Loader2, RotateCcw, Save, X } from 'lucide-react'
 import type { Category, TaskStatus } from '../../types/database'
 import { normalizeStatusProgress } from './statusProgress'
-import {
-  MAX_IMAGE_BYTES,
-  type TaskImageWithUrl,
-} from '../../lib/api/images'
+import { StatusBadge } from './StatusBadge'
+import { ProgressBar } from './ProgressBar'
+import { MAX_IMAGE_BYTES, type TaskImageWithUrl } from '../../lib/api/images'
 import { getErrorMessage } from '../../lib/errors'
 import { useI18n } from '../i18n/context'
-
-const inputClass =
-  'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950'
+import {
+  btnPrimary,
+  btnSecondary,
+  errorBox,
+  fieldLine,
+  label,
+  section,
+} from '../../lib/ui'
 
 const STATUS_OPTIONS: TaskStatus[] = [
   'not_started',
@@ -173,196 +172,215 @@ export function TaskForm({
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
-      {error ? (
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
-          {error}
-        </div>
-      ) : null}
+    <form className="space-y-7" onSubmit={handleSubmit}>
+      {error ? <p className={errorBox}>{error}</p> : null}
 
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium" htmlFor="task-title">
-          {t('form.title')}
-        </label>
-        <input
-          id="task-title"
-          className={inputClass}
-          placeholder={t('form.titlePlaceholder')}
-          required
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </div>
+      <fieldset className="space-y-5">
+        <legend className={`${label} mb-4`}>{t('form.sectionDetails')}</legend>
 
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium" htmlFor="task-description">
-          {t('form.description')}
-        </label>
-        <textarea
-          id="task-description"
-          className={`${inputClass} min-h-28 resize-y`}
-          placeholder={t('form.descriptionPlaceholder')}
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="task-category">
-            {t('form.category')}
+        <div>
+          <label className={label} htmlFor="task-title">
+            {t('form.title')}
           </label>
-          <select
-            id="task-category"
-            className={inputClass}
-            value={categoryId}
-            onChange={(event) => setCategoryId(event.target.value)}
-          >
-            <option value="">{t('common.noCategory')}</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {locale === 'th' ? category.name_th : category.name_en}
-              </option>
-            ))}
-          </select>
+          <input
+            id="task-title"
+            className={fieldLine}
+            placeholder={t('form.titlePlaceholder')}
+            required
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="task-status">
-            {t('form.status')}
+        <div>
+          <label className={label} htmlFor="task-description">
+            {t('form.description')}
           </label>
-          <select
-            id="task-status"
-            className={inputClass}
-            value={status}
-            onChange={(event) =>
-              handleStatusChange(event.target.value as TaskStatus)
-            }
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {t(`status.${option}`)}
-              </option>
-            ))}
-          </select>
+          <textarea
+            id="task-description"
+            className={`${fieldLine} min-h-28 resize-y`}
+            placeholder={t('form.descriptionPlaceholder')}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
         </div>
-      </div>
+      </fieldset>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium" htmlFor="task-progress">
-            {t('form.progress')}
-          </label>
-          <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-            {progress}%
-          </span>
-        </div>
-        <input
-          id="task-progress"
-          className="w-full accent-indigo-600"
-          max={100}
-          min={0}
-          step={1}
-          type="range"
-          value={progress}
-          onChange={(event) => handleProgressChange(Number(event.target.value))}
-        />
-        <p className="text-xs text-slate-400">{t('form.autoSyncHint')}</p>
-      </div>
+      <fieldset className={section}>
+        <legend className={`${label} mb-4`}>{t('form.sectionState')}</legend>
 
-      {existingImages.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{t('form.existingImages')}</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {existingImages.map((image) => {
-              const removed = removedImageIds.includes(image.id)
-              return (
-                <div
-                  key={image.id}
-                  className={[
-                    'relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700',
-                    removed ? 'opacity-40' : '',
-                  ].join(' ')}
-                >
-                  {image.signedUrl ? (
-                    <img
-                      alt={image.file_name}
-                      className="h-28 w-full object-cover"
-                      src={image.signedUrl}
-                    />
-                  ) : (
-                    <div className="flex h-28 items-center justify-center text-xs text-slate-400">
-                      {t('common.noPreview')}
-                    </div>
-                  )}
+        <div className="space-y-5">
+          <div>
+            <label className={label} htmlFor="task-category">
+              {t('form.category')}
+            </label>
+            <select
+              id="task-category"
+              className={fieldLine}
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+            >
+              <option value="">{t('common.noCategory')}</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {locale === 'th' ? category.name_th : category.name_en}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <p className={label} id="task-status-label">
+              {t('form.status')}
+            </p>
+            <div
+              aria-labelledby="task-status-label"
+              className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4"
+              role="group"
+            >
+              {STATUS_OPTIONS.map((option) => {
+                const selected = status === option
+                return (
                   <button
-                    aria-label={
-                      removed ? t('form.undoRemove') : t('form.removeImage')
-                    }
-                    className="absolute right-1.5 top-1.5 rounded-full bg-slate-950/70 p-1 text-white transition hover:bg-slate-950"
-                    onClick={() => toggleRemovedImage(image.id)}
+                    key={option}
+                    aria-pressed={selected}
+                    className={[
+                      'flex min-h-11 items-center border px-3 py-2 text-left transition',
+                      selected
+                        ? 'border-signal bg-signal/10'
+                        : 'border-rule hover:border-muted',
+                    ].join(' ')}
+                    onClick={() => handleStatusChange(option)}
                     type="button"
                   >
-                    {removed ? (
-                      <RotateCcw className="h-3.5 w-3.5" />
-                    ) : (
-                      <X className="h-3.5 w-3.5" />
-                    )}
+                    <StatusBadge status={option} />
                   </button>
-                  {removed ? (
-                    <span className="absolute inset-x-0 bottom-0 bg-red-600/85 py-1 text-center text-[11px] font-medium text-white">
-                      {t('form.willBeDeleted')}
-                    </span>
-                  ) : null}
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-end justify-between gap-3">
+              <label className={label} htmlFor="task-progress">
+                {t('form.progress')}
+              </label>
+              <span className="text-[28px] font-medium leading-none tracking-[-0.03em] tabular-nums">
+                {progress}
+                <span className="ml-0.5 text-[14px] text-dim">%</span>
+              </span>
+            </div>
+            <ProgressBar className="mt-3" status={status} value={progress} />
+            <input
+              id="task-progress"
+              className="mt-2 w-full"
+              max={100}
+              min={0}
+              step={1}
+              type="range"
+              value={progress}
+              onChange={(event) =>
+                handleProgressChange(Number(event.target.value))
+              }
+            />
+            <p className="text-[11px] text-dim">{t('form.autoSyncHint')}</p>
           </div>
         </div>
-      ) : null}
+      </fieldset>
 
-      {previews.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">{t('form.newImages')}</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {previews.map((preview) => (
-              <div
-                key={preview.id}
-                className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700"
-              >
-                <img
-                  alt={preview.file.name}
-                  className="h-28 w-full object-cover"
-                  src={preview.url}
-                />
-                <button
-                  aria-label={t('form.removeNew')}
-                  className="absolute right-1.5 top-1.5 rounded-full bg-slate-950/70 p-1 text-white transition hover:bg-slate-950"
-                  onClick={() =>
-                    setNewImages((current) =>
-                      current.filter((item) => item.id !== preview.id),
-                    )
-                  }
-                  type="button"
+      <fieldset className={section}>
+        <legend className={`${label} mb-4`}>{t('form.sectionImages')}</legend>
+
+        {existingImages.length > 0 ? (
+          <div className="mb-5 space-y-2">
+            <p className={label}>{t('form.existingImages')}</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {existingImages.map((image) => {
+                const removed = removedImageIds.includes(image.id)
+                return (
+                  <div
+                    key={image.id}
+                    className={[
+                      'relative overflow-hidden border border-rule',
+                      removed ? 'opacity-40' : '',
+                    ].join(' ')}
+                  >
+                    {image.signedUrl ? (
+                      <img
+                        alt={image.file_name}
+                        className="h-28 w-full object-cover"
+                        src={image.signedUrl}
+                      />
+                    ) : (
+                      <div className="flex h-28 items-center justify-center text-[11px] text-dim">
+                        {t('common.noPreview')}
+                      </div>
+                    )}
+                    <button
+                      aria-label={
+                        removed ? t('form.undoRemove') : t('form.removeImage')
+                      }
+                      className="absolute right-0 top-0 inline-flex h-11 w-11 items-center justify-center bg-ground/85 text-ink transition hover:bg-ground"
+                      onClick={() => toggleRemovedImage(image.id)}
+                      type="button"
+                    >
+                      {removed ? (
+                        <RotateCcw className="h-4 w-4" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                    </button>
+                    {removed ? (
+                      <span className="absolute inset-x-0 bottom-0 bg-danger/90 py-1 text-center text-[9px] uppercase tracking-[0.12em] text-ground">
+                        {t('form.willBeDeleted')}
+                      </span>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {previews.length > 0 ? (
+          <div className="mb-5 space-y-2">
+            <p className={label}>{t('form.newImages')}</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {previews.map((preview) => (
+                <div
+                  key={preview.id}
+                  className="relative overflow-hidden border border-rule"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
+                  <img
+                    alt={preview.file.name}
+                    className="h-28 w-full object-cover"
+                    src={preview.url}
+                  />
+                  <button
+                    aria-label={t('form.removeNew')}
+                    className="absolute right-0 top-0 inline-flex h-11 w-11 items-center justify-center bg-ground/85 text-ink transition hover:bg-ground"
+                    onClick={() =>
+                      setNewImages((current) =>
+                        current.filter((item) => item.id !== preview.id),
+                      )
+                    }
+                    type="button"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium" htmlFor="task-images">
-          {t('form.addImages')}
-        </label>
         <label
-          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-7 text-center text-sm text-slate-500 transition hover:border-indigo-400 hover:text-indigo-600 dark:border-slate-700 dark:text-slate-400"
+          className="flex min-h-11 cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-rule px-4 py-7 text-center transition hover:border-signal hover:text-signal"
           htmlFor="task-images"
         >
           <ImagePlus className="h-5 w-5" />
-          {t('form.addImagesHint')}
+          <span className={label}>{t('form.addImages')}</span>
+          <span className="text-[11px] text-muted">{t('form.addImagesHint')}</span>
         </label>
         <input
           id="task-images"
@@ -375,14 +393,10 @@ export function TaskForm({
             event.target.value = ''
           }}
         />
-      </div>
+      </fieldset>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={submitting}
-          type="submit"
-        >
+      <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-5">
+        <button className={btnPrimary} disabled={submitting} type="submit">
           {submitting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -392,11 +406,7 @@ export function TaskForm({
         </button>
 
         {onCancel ? (
-          <button
-            className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-            onClick={onCancel}
-            type="button"
-          >
+          <button className={btnSecondary} onClick={onCancel} type="button">
             {t('common.cancel')}
           </button>
         ) : null}

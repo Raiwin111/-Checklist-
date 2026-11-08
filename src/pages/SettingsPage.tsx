@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   Download,
   Languages,
-  ListChecks,
   Loader2,
   LogOut,
   Moon,
@@ -29,9 +28,19 @@ import { supabase } from '../lib/supabase'
 import { getErrorMessage } from '../lib/errors'
 import { useI18n } from '../features/i18n/context'
 import type { Locale } from '../features/i18n/dictionary'
+import {
+  btnDanger,
+  btnSecondary,
+  errorBox,
+  fieldLine,
+  label,
+  pageLead,
+  pageTitle,
+  successBox,
+} from '../lib/ui'
 
-const cardClass =
-  'rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900'
+const themeButton =
+  'inline-flex min-h-11 flex-1 items-center justify-center gap-2 border px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.12em] transition'
 
 export function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -44,8 +53,12 @@ export function SettingsPage() {
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const { data: dashboard, loading: dashboardLoading, fromCache, cachedAt } =
-    useDashboard(user?.id)
+  const {
+    data: dashboard,
+    loading: dashboardLoading,
+    fromCache,
+    cachedAt,
+  } = useDashboard(user?.id)
   const stats = dashboard?.stats
 
   const [exporting, setExporting] = useState(false)
@@ -145,36 +158,26 @@ export function SettingsPage() {
   ] as const
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-8">
       {fromCache ? <CacheNotice cachedAt={cachedAt} /> : null}
 
-      <div>
-        <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t('settings.subtitle')}
-        </p>
-      </div>
+      <header className="border-b border-rule pb-6">
+        <h1 className={pageTitle}>{t('settings.title')}</h1>
+        <p className={pageLead}>{t('settings.subtitle')}</p>
+      </header>
 
-      {error ? (
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
-          {error}
-        </div>
-      ) : null}
+      {error ? <p className={errorBox}>{error}</p> : null}
+      {exportNote ? <p className={successBox}>{exportNote}</p> : null}
 
-      {exportNote ? (
-        <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-          {exportNote}
-        </div>
-      ) : null}
+      <section className="border-t border-rule pt-5">
+        <h2 className={`${label} flex items-center gap-2`}>
+          <UserRound className="h-3.5 w-3.5" />
+          {t('settings.deviceAccounts')}
+        </h2>
 
-      <section className={cardClass}>
-        <div className="mb-4 flex items-center gap-2">
-          <UserRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-sm font-semibold">{t('settings.deviceAccounts')}</h2>
-        </div>
-        <div className="space-y-2">
+        <div className="mt-2">
           {accounts.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="py-3 text-[12px] text-muted">
               {t('settings.noAccounts')}
             </p>
           ) : (
@@ -183,24 +186,25 @@ export function SettingsPage() {
               return (
                 <div
                   key={account.userId}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5 dark:border-slate-800"
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-rule-soft py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
+                    <p className="truncate text-[13px] font-medium">
                       {account.email}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-dim">
                       {isCurrent ? t('settings.active') : t('settings.saved')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {isCurrent ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-status-done">
+                        <span className="h-1.5 w-1.5 bg-status-done" />
                         {t('settings.activeBadge')}
                       </span>
                     ) : (
                       <button
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="inline-flex min-h-11 items-center border border-rule px-3 text-[9px] font-medium uppercase tracking-[0.12em] text-muted transition hover:border-ink hover:text-ink disabled:opacity-60"
                         disabled={busyUserId !== null}
                         onClick={() => void handleSwitch(account)}
                         type="button"
@@ -211,7 +215,7 @@ export function SettingsPage() {
                       </button>
                     )}
                     <button
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                      className="inline-flex min-h-11 items-center border border-danger/60 px-3 text-[9px] font-medium uppercase tracking-[0.12em] text-danger transition hover:bg-danger hover:text-ground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-danger"
                       disabled={isCurrent}
                       onClick={() => handleRemove(account.userId)}
                       title={
@@ -227,8 +231,9 @@ export function SettingsPage() {
             })
           )}
         </div>
+
         <button
-          className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className={`${btnSecondary} mt-4`}
           onClick={() => void handleSignOut()}
           type="button"
         >
@@ -237,24 +242,24 @@ export function SettingsPage() {
         </button>
       </section>
 
-      <section className={cardClass}>
+      <section className="border-t border-rule pt-5">
         {user ? <CategoryManager userId={user.id} /> : null}
       </section>
 
-      <section className={cardClass}>
-        <h2 className="text-sm font-semibold">{t('settings.general')}</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
+      <section className="border-t border-rule pt-5">
+        <h2 className={label}>{t('settings.general')}</h2>
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+          <div>
             <label
-              className="flex items-center gap-2 text-sm font-medium"
+              className={`${label} flex items-center gap-2`}
               htmlFor="language"
             >
-              <Languages className="h-4 w-4" />
+              <Languages className="h-3.5 w-3.5" />
               {t('settings.language')}
             </label>
             <select
               id="language"
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-950"
+              className={fieldLine}
               value={locale}
               onChange={(event) =>
                 handleLocaleChange(event.target.value as Locale)
@@ -263,20 +268,20 @@ export function SettingsPage() {
               <option value="th">ไทย (Thai)</option>
               <option value="en">English</option>
             </select>
-            <p className="text-xs text-slate-400">
+            <p className="mt-1 text-[11px] text-dim">
               {t('settings.languageHint')}
             </p>
           </div>
 
-          <div className="space-y-1.5">
-            <span className="text-sm font-medium">{t('settings.theme')}</span>
-            <div className="flex gap-2">
+          <div>
+            <p className={label}>{t('settings.theme')}</p>
+            <div className="mt-2 flex gap-2">
               <button
                 className={[
-                  'inline-flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition',
+                  themeButton,
                   theme === 'light'
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-300'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
+                    ? 'border-signal bg-signal/10 text-ink'
+                    : 'border-rule text-muted hover:border-muted hover:text-ink',
                 ].join(' ')}
                 onClick={() => setTheme('light')}
                 type="button"
@@ -286,10 +291,10 @@ export function SettingsPage() {
               </button>
               <button
                 className={[
-                  'inline-flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition',
+                  themeButton,
                   theme === 'dark'
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-500/40 dark:bg-indigo-500/10 dark:text-indigo-300'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800',
+                    ? 'border-signal bg-signal/10 text-ink'
+                    : 'border-rule text-muted hover:border-muted hover:text-ink',
                 ].join(' ')}
                 onClick={() => setTheme('dark')}
                 type="button"
@@ -302,30 +307,27 @@ export function SettingsPage() {
         </div>
       </section>
 
-      <section className={cardClass}>
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <ListChecks className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            {t('settings.systemInfo')}
-          </h2>
+      <section className="border-t border-rule pt-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className={label}>{t('settings.systemInfo')}</h2>
           {dashboardLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-dim" />
           ) : null}
         </div>
-        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {statCards.map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-950"
-            >
-              <dt className="text-xs text-slate-500 dark:text-slate-400">
-                {label}
+
+        <dl className="mt-3 grid grid-cols-2 gap-px border border-rule bg-rule sm:grid-cols-4">
+          {statCards.map(([statLabel, value]) => (
+            <div key={statLabel} className="bg-ground px-3 py-3">
+              <dt className="text-[9px] uppercase tracking-[0.12em] text-dim">
+                {statLabel}
               </dt>
-              <dd className="mt-1 text-lg font-bold">{value}</dd>
+              <dd className="mt-1 text-[22px] font-medium tabular-nums leading-none">
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-xs text-slate-400">
+        <p className="mt-3 text-[11px] text-dim">
           {t('settings.avgProgress', {
             value: stats?.averageProgress ?? 0,
             count: stats?.onHold ?? 0,
@@ -333,11 +335,11 @@ export function SettingsPage() {
         </p>
       </section>
 
-      <section className={cardClass}>
-        <h2 className="text-sm font-semibold">{t('settings.dataManagement')}</h2>
+      <section className="border-t border-rule pt-5">
+        <h2 className={label}>{t('settings.dataManagement')}</h2>
         <div className="mt-4 space-y-3">
           <button
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className={btnSecondary}
             disabled={exporting}
             onClick={() => void handleExport()}
             type="button"
@@ -349,18 +351,18 @@ export function SettingsPage() {
             )}
             {exporting ? t('settings.exporting') : t('settings.export')}
           </button>
-          <p className="text-xs text-slate-400">{t('settings.exportHint')}</p>
+          <p className="text-[11px] text-dim">{t('settings.exportHint')}</p>
 
-          <div className="rounded-xl border border-red-200 p-4 dark:border-red-500/30">
-            <div className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
+          <div className="border border-danger/50 p-4">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-danger">
               <ShieldAlert className="h-4 w-4" />
               {t('settings.dangerZone')}
             </div>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">
               {t('settings.deleteAccountDescription')}
             </p>
             <button
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500"
+              className={`${btnDanger} mt-3`}
               onClick={openDelete}
               type="button"
             >
@@ -381,7 +383,7 @@ export function SettingsPage() {
         footer={
           <>
             <button
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className={btnSecondary}
               disabled={deleting}
               onClick={() => setDeleteOpen(false)}
               type="button"
@@ -389,7 +391,7 @@ export function SettingsPage() {
               {t('common.cancel')}
             </button>
             <button
-              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className={btnDanger}
               disabled={!canDelete || deleting}
               onClick={() => void handleDeleteAccount()}
               type="button"
@@ -405,21 +407,24 @@ export function SettingsPage() {
         }
       >
         <div className="space-y-3">
-          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          <p className="text-[13px] leading-relaxed text-muted">
             {t('settings.deleteConfirmText', { email: user?.email ?? '' })}
           </p>
-          <input
-            aria-label={t('settings.deleteConfirmLabel')}
-            autoComplete="off"
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 dark:border-slate-700 dark:bg-slate-950"
-            placeholder={user?.email ?? ''}
-            value={deleteConfirmText}
-            onChange={(event) => setDeleteConfirmText(event.target.value)}
-          />
+          <div>
+            <label className={label} htmlFor="delete-confirm">
+              {t('settings.deleteConfirmLabel')}
+            </label>
+            <input
+              id="delete-confirm"
+              autoComplete="off"
+              className={`${fieldLine} focus:border-danger`}
+              placeholder={user?.email ?? ''}
+              value={deleteConfirmText}
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+            />
+          </div>
           {deleteError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {deleteError}
-            </p>
+            <p className="text-[12px] text-danger">{deleteError}</p>
           ) : null}
         </div>
       </Modal>

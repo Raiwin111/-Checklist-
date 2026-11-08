@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../features/auth/auth-context'
-import { syncManager, type SyncStatus } from '../lib/offline/sync'
+import { syncManager, type SyncStatus as SyncState } from '../lib/offline/sync'
 import { getPendingSyncCount } from '../lib/offline/local'
 import { useQueueChangeRefresh } from '../lib/offline/syncEvents'
 import { useI18n } from '../features/i18n/context'
@@ -9,20 +8,17 @@ import { useI18n } from '../features/i18n/context'
 export function SyncStatus() {
   const { user } = useAuth()
   const { t } = useI18n()
-  const [status, setStatus] = useState<SyncStatus>({ kind: 'idle' })
+  const [status, setStatus] = useState<SyncState>({ kind: 'idle' })
   const [pendingCount, setPendingCount] = useState(0)
   const [tick, setTick] = useState(0)
 
   const bump = useCallback(() => setTick((value) => value + 1), [])
   useQueueChangeRefresh(bump)
 
-  const handleStatusChange = useCallback(
-    (next: SyncStatus) => {
-      setStatus(next)
-      setTick((value) => value + 1)
-    },
-    [],
-  )
+  const handleStatusChange = useCallback((next: SyncState) => {
+    setStatus(next)
+    setTick((value) => value + 1)
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -45,39 +41,42 @@ export function SyncStatus() {
   const isSyncing = status.kind === 'syncing'
   const hasError = status.kind === 'error'
 
-  let base =
-    'fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-opacity duration-300'
+  const label = hasConflict
+    ? t('offline.conflictDetected')
+    : hasError
+      ? t('offline.syncError')
+      : isSyncing
+        ? t('offline.syncing')
+        : pendingCount > 0
+          ? t('offline.pendingSync', { count: pendingCount })
+          : t('offline.synced')
 
-  if (hasConflict || pendingCount > 0) {
-    base += ' bg-amber-50 text-amber-800 border border-amber-200'
-  } else if (!hasConflict && pendingCount === 0 && !isSyncing && !hasError) {
-    base += ' bg-emerald-50 text-emerald-700 border border-emerald-200'
-  } else if (isSyncing) {
-    base += ' bg-blue-50 text-blue-700 border border-blue-200'
-  } else if (hasError) {
-    base += ' bg-red-50 text-red-700 border border-red-200'
-  }
+  const display = hasConflict
+    ? t('offline.conflictShort')
+    : hasError
+      ? t('offline.syncError')
+      : isSyncing
+        ? t('offline.syncing')
+        : pendingCount > 0
+          ? t('offline.pendingShort', { count: pendingCount })
+          : t('offline.synced')
+
+  const tone = hasConflict || hasError ? 'text-danger' : 'text-status-done'
+  const dotTone = hasConflict || hasError ? 'bg-danger' : 'bg-status-done'
 
   return (
-    <div className={base}>
-      {isSyncing ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : hasConflict ? (
-        <AlertCircle className="h-3.5 w-3.5" />
-      ) : pendingCount > 0 ? (
-        <Loader2 className="h-3.5 w-3.5" />
-      ) : (
-        <CheckCircle2 className="h-3.5 w-3.5" />
-      )}
-      <span>
-        {hasConflict
-          ? t('offline.conflictDetected')
-          : isSyncing
-            ? t('offline.syncing')
-            : pendingCount > 0
-              ? t('offline.pendingSync', { count: pendingCount })
-              : t('offline.synced')}
-      </span>
-    </div>
+    <span
+      aria-live="polite"
+      className={`inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] ${tone}`}
+      title={label}
+    >
+      <span
+        aria-hidden
+        className={`inline-block h-[5px] w-[5px] ${
+          isSyncing || pendingCount > 0 ? 'animate-pulse' : ''
+        } ${dotTone}`}
+      />
+      <span className="hidden max-w-[12rem] truncate sm:inline">{display}</span>
+    </span>
   )
 }

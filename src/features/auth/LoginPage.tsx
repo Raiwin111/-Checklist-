@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
+import { AuthShell } from './AuthShell'
 import { PasswordInput } from './PasswordInput'
 import { useAuth } from './auth-context'
 import { useI18n } from '../i18n/context'
+import { btnPrimary, fieldLine } from '../../lib/ui'
 
 export function LoginPage() {
   const { session, loading, signIn } = useAuth()
@@ -17,8 +18,8 @@ export function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-ground">
+        <div className="h-8 w-8 animate-spin border border-rule border-t-signal" />
       </div>
     )
   }
@@ -45,15 +46,19 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell title={t('auth.loginTitle')} subtitle={t('auth.loginSubtitle')}>
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="email">
+    <AuthShell
+      title={t('auth.loginTitle')}
+      subtitle={t('auth.loginSubtitle')}
+      brandLine={t('auth.brandLine')}
+    >
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <div>
+          <label className="text-[10px] uppercase tracking-[0.16em] text-dim" htmlFor="email">
             {t('auth.email')}
           </label>
           <input
             id="email"
-            className={inputClass}
+            className={fieldLine}
             type="email"
             autoComplete="email"
             required
@@ -62,13 +67,13 @@ export function LoginPage() {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium" htmlFor="password">
+        <div className="space-y-2">
+          <div className="flex items-end justify-between gap-2">
+            <label className="text-[10px] uppercase tracking-[0.16em] text-dim" htmlFor="password">
               {t('auth.password')}
             </label>
             <Link
-              className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+              className="text-[10px] uppercase tracking-[0.12em] text-signal transition hover:underline"
               to="/forgot-password"
             >
               {t('auth.forgot')}
@@ -83,21 +88,17 @@ export function LoginPage() {
           />
         </div>
 
-        {error ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
-            {error}
-          </p>
-        ) : null}
+        {error ? <p className="text-[11px] text-danger">{error}</p> : null}
 
-        <button className={primaryButtonClass} type="submit" disabled={submitting}>
+        <button className={btnPrimary} type="submit" disabled={submitting}>
           {submitting ? t('auth.signingIn') : t('auth.signIn')}
         </button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-5 text-center text-[11px] text-dim">
         {t('auth.noAccount')}{' '}
         <Link
-          className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+          className="text-signal underline-offset-4 transition hover:underline"
           to="/signup"
         >
           {t('auth.signUpLink')}

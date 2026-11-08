@@ -8,9 +8,9 @@ export function CacheNotice({ cachedAt }: { cachedAt: string | null }) {
   if (!cachedAt) return null
 
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-      <WifiOff className="h-3.5 w-3.5 shrink-0" />
+    <p className="flex items-start gap-2 border-l border-warning bg-warning/10 px-3 py-2 text-[11px] text-warning">
+      <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       {t('offline.cachedAt', { time: formatDateTime(cachedAt) })}
-    </div>
+    </p>
   )
 }

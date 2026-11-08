@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-08T00:00:00Z",
+  "title": "Design System: Personal Tasks",
+  "extensions": {
+    "colorMeta": {
+      "ground": { "role": "neutral", "displayName": "Ground", "canonical": "#14130E", "tonalRamp": ["#0a0a07", "#14130E", "#1B1914", "#232019", "#2A261D", "#3A3527", "#4A4534", "#5F5A46"] },
+      "plate": { "role": "neutral", "displayName": "Plate", "canonical": "#1B1914", "tonalRamp": ["#100f0c", "#1B1914", "#232019", "#2A261D", "#332E22", "#3A3527", "#4A4534", "#5F5A46"] },
+      "plate-2": { "role": "neutral", "displayName": "Plate 2", "canonical": "#232019", "tonalRamp": ["#161510", "#232019", "#2A261D", "#332E22", "#3A3527", "#4A4534", "#5F5A46", "#756E5C"] },
+      "rule": { "role": "neutral", "displayName": "Rule", "canonical": "#3A3527", "tonalRamp": ["#2A261D", "#3A3527", "#4A4534", "#5F5A46", "#756E5C", "#8C8470", "#A39A82", "#BCB49E"] },
+      "rule-soft": { "role": "neutral", "displayName": "Rule Soft", "canonical": "#2A261D", "tonalRamp": ["#1E1C15", "#2A261D", "#332E22", "#3A3527", "#4A4534", "#5F5A46", "#756E5C", "#8C8470"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#EDE6D2", "tonalRamp": ["#14130E", "#2A261D", "#3A3527", "#5F5A46", "#756E5C", "#8C8470", "#A39A82", "#EDE6D2"] },
+      "muted": { "role": "neutral", "displayName": "Muted", "canonical": "#A39A82", "tonalRamp": ["#5F5A46", "#756E5C", "#8C8470", "#A39A82", "#BCB49E", "#CFC6B2", "#DED5BD", "#EDE6D2"] },
+      "dim": { "role": "neutral", "displayName": "Dim", "canonical": "#8C8470", "tonalRamp": ["#5F5A46", "#756E5C", "#8C8470", "#A39A82", "#BCB49E", "#CFC6B2", "#DED5BD", "#EDE6D2"] },
+      "signal": { "role": "primary", "displayName": "Sodium Yellow", "canonical": "#F4C542", "tonalRamp": ["#9A5E0A", "#B8730C", "#D08A1E", "#E8A732", "#F4C542", "#F9D47A", "#FCE2A8", "#FEF0D2"] },
+      "action": { "role": "primary", "displayName": "Action", "canonical": "#F4C542", "tonalRamp": ["#9A5E0A", "#B8730C", "#D08A1E", "#E8A732", "#F4C542", "#F9D47A", "#FCE2A8", "#FEF0D2"] },
+      "action-ink": { "role": "neutral", "displayName": "Action Ink", "canonical": "#14130E", "tonalRamp": ["#050503", "#14130E", "#1B1914", "#232019", "#2A261D", "#3A3527", "#4A4534", "#5F5A46"] },
+      "status-live": { "role": "status", "displayName": "Live", "canonical": "#F4C542", "tonalRamp": ["#9A5E0A", "#B8730C", "#D08A1E", "#E8A732", "#F4C542", "#F9D47A", "#FCE2A8", "#FEF0D2"] },
+      "status-hold": { "role": "status", "displayName": "Hold", "canonical": "#D06A4E", "tonalRamp": ["#7A3A2E", "#9A4B3E", "#B85C4E", "#D06A4E", "#E0856E", "#EFA08E", "#FBBCAE", "#FDD6CE"] },
+      "status-done": { "role": "status", "displayName": "Done", "canonical": "#8FBF6A", "tonalRamp": ["#4F6B33", "#5F8043", "#6F9553", "#8FAA63", "#8FBF6A", "#A4CC8A", "#B9D9AA", "#CEE6CA"] },
+      "status-todo": { "role": "status", "displayName": "Todo", "canonical": "#5FB8D6", "tonalRamp": ["#2F6F86", "#3F879E", "#4F9FB6", "#5FB8D6", "#73C4DE", "#87D0E6", "#9BDCEE", "#AFE8F6"] },
+      "danger": { "role": "status", "displayName": "Danger", "canonical": "#D06A4E", "tonalRamp": ["#7A3A2E", "#9A4B3E", "#B85C4E", "#D06A4E", "#E0856E", "#EFA08E", "#FBBCAE", "#FDD6CE"] },
+      "warning": { "role": "status", "displayName": "Warning", "canonical": "#F4C542", "tonalRamp": ["#9A5E0A", "#B8730C", "#D08A1E", "#E8A732", "#F4C542", "#F9D47A", "#FCE2A8", "#FEF0D2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page headings and open-count hero figures." },
+      "headline": { "displayName": "Headline", "purpose": "Section titles and all-clear messages." },
+      "title": { "displayName": "Title", "purpose": "Task titles and link text." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, hints, metadata; max ~65ch measure." },
+      "label": { "displayName": "Label", "purpose": "Field labels, status chips, nav items; uppercase, tracked." },
+      "micro": { "displayName": "Micro", "purpose": "Sync status, counts, timestamps; uppercase, tracked." },
+      "caption": { "displayName": "Caption", "purpose": "Hints and secondary metadata." },
+      "small": { "displayName": "Small", "purpose": "Body secondary text." },
+      "metric": { "displayName": "Metric", "purpose": "Average progress figure; tabular numerals." },
+      "micro-sm": { "displayName": "Micro Small", "purpose": "Tiny labels and counts." },
+      "caption-sm": { "displayName": "Caption Small", "purpose": "Secondary metadata." },
+      "title-sm": { "displayName": "Title Small", "purpose": "Small titles." },
+      "body-lg": { "displayName": "Body Large", "purpose": "Larger body text." },
+      "heading-xs": { "displayName": "Heading XSmall", "purpose": "Modal titles." },
+      "heading-sm": { "displayName": "Heading Small", "purpose": "Small headings." },
+      "heading-md": { "displayName": "Heading Medium", "purpose": "Medium headings." },
+      "heading-lg": { "displayName": "Heading Large", "purpose": "Large section headings." },
+      "display-sm": { "displayName": "Display Small", "purpose": "Small display text." },
+      "display-md": { "displayName": "Display Medium", "purpose": "Medium display text." },
+      "display-lg": { "displayName": "Display Large", "purpose": "Large display text." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "width-transition", "value": "transition-[width] duration-300", "purpose": "Progress-line width animation." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px", "purpose": "Switches desktop rail to mobile bottom nav." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Min-height 44px square button for primary actions and the mobile Add FAB.",
+      "html": "<button class=\"ds-btn-primary\">SAVE TASK</button>",
+      "css": ".ds-btn-primary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; background: var(--color-action); color: var(--color-action-ink); padding: 10px 16px; font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; text-align: center; border: none; border-radius: 0; cursor: pointer; transition: opacity 0.2s ease; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:disabled { cursor: not-allowed; opacity: 0.45; } .ds-btn-primary:focus-visible { outline: 1px solid var(--color-signal); outline-offset: 3px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined secondary action, fills plate on hover.",
+      "html": "<button class=\"ds-btn-secondary\">CANCEL</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--color-rule); color: var(--color-ink); padding: 10px 16px; font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; border-radius: 0; cursor: pointer; transition: border-color 0.2s ease, background-color 0.2s ease; } .ds-btn-secondary:hover { border-color: var(--color-ink); background: var(--color-plate); } .ds-btn-secondary:focus-visible { outline: 1px solid var(--color-signal); outline-offset: 3px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Danger action; hover fills danger colour and flips text to ground.",
+      "html": "<button class=\"ds-btn-danger\">DELETE</button>",
+      "css": ".ds-btn-danger { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--color-danger); color: var(--color-danger); padding: 10px 16px; font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; background: transparent; border-radius: 0; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; } .ds-btn-danger:hover { background: var(--color-danger); color: var(--color-ground); } .ds-btn-danger:focus-visible { outline: 1px solid var(--color-signal); outline-offset: 3px; }"
+    },
+    {
+      "name": "Bottom-Rule Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Transparent field with a 1px bottom rule; focus shifts the rule to signal.",
+      "html": "<input class=\"ds-input-field\" type=\"text\" placeholder=\"Title\">",
+      "css": ".ds-input-field { width: 100%; border: 0; border-bottom: 1px solid var(--color-rule); background: transparent; padding: 10px 0; font-family: 'Bai Jamjuree', Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 15px; font-weight: 400; line-height: 1.6; color: var(--color-ink); border-radius: 0; outline: none; transition: border-color 0.2s ease; } .ds-input-field::placeholder { color: var(--color-dim); } .ds-input-field:focus { border-bottom-color: var(--color-signal); } .ds-input-field:focus-visible { outline: 1px solid var(--color-signal); outline-offset: 3px; }"
+    },
+    {
+      "name": "Desktop Nav Rail",
+      "kind": "nav",
+      "refersTo": "nav-rail-desktop",
+      "description": "220px left rail with 1px right rule; destinations are 10px uppercase tracked items with a 2px active tick in signal colour.",
+      "html": "<nav class=\"ds-nav-rail\">\n  <a class=\"ds-nav-item ds-nav-item--active\">Dashboard</a>\n  <a class=\"ds-nav-item\">Tasks</a>\n</nav>",
+      "css": ".ds-nav-rail { width: 220px; border-right: 1px solid var(--color-rule); background: var(--color-plate); display: flex; flex-direction: column; } .ds-nav-item { display: flex; align-items: center; min-height: 44px; padding: 12px 16px 12px 34px; font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; text-decoration: none; color: var(--color-dim); position: relative; } .ds-nav-item::before { content: ''; position: absolute; left: 22px; top: 50%; width: 9px; height: 1px; background: currentColor; transform: translatey(-50%); } .ds-nav-item--active { color: var(--color-ink); } .ds-nav-item--active::before { width: 17px; height: 2px; background: var(--color-signal); box-shadow: 0 0 8px rgba(244,197,66,0.45); }"
+    },
+    {
+      "name": "Mobile Bottom Nav",
+      "kind": "nav",
+      "refersTo": "nav-bottom-mobile",
+      "description": "Four equal columns with 10px labels; active state shown by signal-colour top underline.",
+      "html": "<nav class=\"ds-nav-bottom\">\n  <a class=\"ds-nav-item--active\">Dashboard</a>\n  <a class=\"ds-nav-item\">Tasks</a>\n</nav>",
+      "css": ".ds-nav-bottom { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--color-rule); background: var(--color-ground); } .ds-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 58px; padding: 8px 4px; font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; color: var(--color-dim); } .ds-nav-item--active { color: var(--color-ink); } .ds-nav-item--active::after { content: ''; position: absolute; inset-inline: 0; top: 0; margin: auto 16px; width: 28px; height: 2px; background: var(--color-signal); }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "status-live",
+      "description": "9px uppercase label preceded by a 4px line glyph whose form encodes status; colour confirms but never carries status alone.",
+      "html": "<span class=\"ds-chip ds-chip--live\">\n  <span class=\"ds-chip-line\"></span>\n  In Progress\n</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 9px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; } .ds-chip-line { display: inline-block; width: 16px; height: 2px; } .ds-chip--live { color: var(--color-status-live); } .ds-chip--live .ds-chip-line { background: var(--color-status-live); box-shadow: 0 2px 0 var(--color-status-live); } .ds-chip--hold { color: var(--color-status-hold); } .ds-chip--hold .ds-chip-line { background: repeating-linear-gradient(90deg, var(--color-status-hold) 0 3px, transparent 3px 6px); } .ds-chip--done { color: var(--color-status-done); opacity: 0.62; } .ds-chip--done .ds-chip-line { background: var(--color-status-done); opacity: 0.62; } .ds-chip--todo { color: var(--color-status-todo); } .ds-chip--todo .ds-chip-line { background: repeating-linear-gradient(90deg, var(--color-status-todo) 0 1px, transparent 1px 4px); }"
+    },
+    {
+      "name": "Progress Line",
+      "kind": "custom",
+      "refersTo": "status-live",
+      "description": "2px track in rule colour; filled portion in status colour bound to progress %; tabular % readout beside it.",
+      "html": "<div class=\"ds-progress\"><div class=\"ds-progress-fill\" style=\"width: 72%\"></div></div>",
+      "css": ".ds-progress { position: relative; height: 2px; width: 100%; background: var(--color-rule); } .ds-progress-fill { position: absolute; inset-y: 0; left: 0; height: 100%; background: var(--color-status-live); box-shadow: 0 2px 0 var(--color-status-live); transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1); }"
+    },
+    {
+      "name": "Modal",
+      "kind": "custom",
+      "refersTo": "modal",
+      "description": "Plate surface, square, 1px rule border, no shadow; actions right-aligned.",
+      "html": "<div class=\"ds-modal\" role=\"dialog\" aria-modal=\"true\">\n  <button class=\"ds-modal-close\">✕</button>\n  <h2 class=\"ds-modal-title\">Title</h2>\n  <div class=\"ds-modal-body\">Body</div>\n</div>",
+      "css": ".ds-modal { max-height: 90vh; max-width: 704px; border: 1px solid var(--color-rule); border-radius: 0; background: var(--color-plate); padding: 20px; outline: none; } .ds-modal-title { font-family: Archivo, 'Bai Jamjuree', ui-sans-serif, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--color-ink); margin: 0 0 16px; } .ds-modal-close { background: transparent; border: none; border-radius: 0; cursor: pointer; font-size: inherit; } .ds-modal-body { color: var(--color-ink); font-family: 'Bai Jamjuree', Archivo, ui-sans-serif, system-ui, sans-serif; font-size: 13px; line-height: 1.6; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Calibrated Observation Sheet",
+    "overview": "A dark-first task board that reads like a calibrated instrument panel: every task row registers to one off-centre rail, and status is carried by line form before colour. Warm charcoal continuum (#14130E ground) with bone ink (#EDE6D2), sodium yellow (#F4C542) as the live/primary signal. Type is Archivo for labels and display, Bai Jamjuree for body, set at 15px with tabular numerals. 1px rules, no rounded cards, no shadows, no gradient text, uppercase tracked labels ~9-10px. Dark is the default; light mode is warm paper/charcoal opted into explicitly via ptrs.theme=light.",
+    "keyCharacteristics": [
+      "Dark ground (#14130E) default, light warm-paper alternative",
+      "Sodium yellow (#F4C542) signal colour for live/primary actions only",
+      "Status encoded by line form: solid = live, dashed = held, dotted = not started, doubled = urgent",
+      "1px rules; square surfaces; zero shadow vocabulary",
+      "44px minimum touch targets; Thai labels sized to fit; WCAG AA contrast",
+      "Bilingual TH/EN with parity in every label"
+    ],
+    "rules": [
+      { "name": "The One Line Rule", "body": "Status is never carried by colour alone — every status also has a distinct line form (solid / dashed / dotted / doubled). Colour is the confirmation, never the sole carrier.", "section": "colors" },
+      { "name": "No kicker above headings", "body": "The heading carries its own weight; delete the label and let the heading speak.", "section": "typography" },
+      { "name": "Square-by-default", "body": "Zero border-radius on buttons, inputs, cards, modals, and dialogs.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do encode status by line form first (solid / dashed / dotted / doubled), colour second.",
+      "Do use 1px rules and square surfaces; keep the shadow vocabulary empty.",
+      "Do keep labels ≤11px, uppercase, tracked; body at 15px with tabular numerals.",
+      "Do keep every touch target ≥44px; Thai labels must fit their containers.",
+      "Do keep TH/EN parity: every key added to th must exist in en."
+    ],
+    "donts": [
+      "Don't use a kicker or eyebrow above a heading.",
+      "Don't use section numbers (01/02/03) unless the sequence itself carries information.",
+      "Don't use gradient text or rounded-card stacks.",
+      "Don't carry state by colour alone.",
+      "Don't use emoji or monospace as costume; icons are drawn from one library."
+    ]
+  }
+}

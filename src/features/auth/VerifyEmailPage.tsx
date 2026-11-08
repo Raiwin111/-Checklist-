@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { AuthShell } from './AuthShell'
 import { useI18n } from '../i18n/context'
+import { btnPrimary } from '../../lib/ui'
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
@@ -11,19 +12,18 @@ export function VerifyEmailPage() {
     <AuthShell
       title={t('auth.verifyTitle')}
       subtitle={t('auth.verifySubtitle')}
+      brandLine={t('auth.brandNote')}
     >
-      <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+      <div className="space-y-3">
         {email ? (
-          <p>
-            {t('auth.verifySentTo', { email })}
-          </p>
+          <p className="text-[12px] text-muted">{t('auth.verifySentTo', { email })}</p>
         ) : null}
-        <p>{t('auth.verifyHint')}</p>
-        <p className="rounded-xl bg-slate-100 px-4 py-3 text-xs text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+        <p className="text-[12px] text-muted">{t('auth.verifyHint')}</p>
+        <p className="border-l border-danger bg-danger/10 pl-3 py-2 text-[11px] text-danger">
           {t('auth.verifySpam')}
         </p>
         <Link
-          className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
+          className={btnPrimary}
           to="/login"
         >
           {t('auth.backToLogin')}

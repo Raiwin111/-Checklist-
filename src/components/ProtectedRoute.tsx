@@ -1,21 +1,21 @@
 import { Navigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
 import { useAuth } from '../features/auth/auth-context'
+import { AppLayout } from './AppLayout'
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
+export function ProtectedRoute() {
   const { session, loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-ground">
+        <div className="h-8 w-8 animate-spin border border-rule border-t-signal" />
       </div>
     )
   }
 
   if (!session) {
-    return <Navigate to="/login" replace />
+    return <Navigate replace to="/login" />
   }
 
-  return <>{children}</>
+  return <AppLayout />
 }

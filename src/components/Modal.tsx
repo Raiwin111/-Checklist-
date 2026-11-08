@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useI18n } from '../features/i18n/context'
+import { iconBtn } from '../lib/ui'
 
 export function Modal({
   open,
@@ -32,30 +33,36 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       onClick={onClose}
       role="presentation"
     >
       <div
         aria-label={title}
         aria-modal="true"
-        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto border-t border-rule bg-plate p-5 sm:border sm:border-rule"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="text-base font-semibold">{title}</h2>
+        <div className="flex items-start justify-between gap-4 border-b border-rule pb-3">
+          <h2 className="text-[11px] font-medium uppercase leading-tight tracking-[0.16em] text-ink">
+            {title}
+          </h2>
           <button
             aria-label={t('common.close')}
-            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+            className={iconBtn}
             onClick={onClose}
             type="button"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="mt-4">{children}</div>
-        {footer ? <div className="mt-5 flex justify-end gap-2">{footer}</div> : null}
+        <div className="pt-4">{children}</div>
+        {footer ? (
+          <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-rule pt-4">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   )

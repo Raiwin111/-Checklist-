@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
+import { AuthShell } from './AuthShell'
 import { PasswordInput } from './PasswordInput'
 import { useAuth } from './auth-context'
 import { useI18n } from '../i18n/context'
+import { btnPrimary, fieldLine } from '../../lib/ui'
 
 export function SignupPage() {
   const { session, loading, signUp } = useAuth()
@@ -17,8 +18,8 @@ export function SignupPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-ground">
+        <div className="h-8 w-8 animate-spin border border-rule border-t-signal" />
       </div>
     )
   }
@@ -67,15 +68,16 @@ export function SignupPage() {
     <AuthShell
       title={t('auth.signupTitle')}
       subtitle={t('auth.signupSubtitle')}
+      brandLine={t('auth.brandLine')}
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="email">
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <div>
+          <label className="text-[10px] uppercase tracking-[0.16em] text-dim" htmlFor="email">
             {t('auth.email')}
           </label>
           <input
             id="email"
-            className={inputClass}
+            className={fieldLine}
             type="email"
             autoComplete="email"
             required
@@ -84,8 +86,8 @@ export function SignupPage() {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="password">
+        <div>
+          <label className="text-[10px] uppercase tracking-[0.16em] text-dim" htmlFor="password">
             {t('auth.password')}
           </label>
           <PasswordInput
@@ -98,8 +100,8 @@ export function SignupPage() {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium" htmlFor="confirm-password">
+        <div>
+          <label className="text-[10px] uppercase tracking-[0.16em] text-dim" htmlFor="confirm-password">
             {t('auth.confirmPassword')}
           </label>
           <PasswordInput
@@ -112,21 +114,17 @@ export function SignupPage() {
           />
         </div>
 
-        {error ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
-            {error}
-          </p>
-        ) : null}
+        {error ? <p className="text-[11px] text-danger">{error}</p> : null}
 
-        <button className={primaryButtonClass} type="submit" disabled={submitting}>
+        <button className={btnPrimary} type="submit" disabled={submitting}>
           {submitting ? t('auth.creating') : t('auth.create')}
         </button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-5 text-center text-[11px] text-dim">
         {t('auth.hasAccount')}{' '}
         <Link
-          className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+          className="text-signal underline-offset-4 transition hover:underline"
           to="/login"
         >
           {t('auth.signInLink')}

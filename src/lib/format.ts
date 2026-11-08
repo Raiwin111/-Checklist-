@@ -44,12 +44,11 @@ export function formatRelative(value: string | null | undefined): string {
   return formatDateTime(value)
 }
 
-export const statusClasses: Record<TaskStatus, string> = {
-  not_started: 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300',
-  in_progress:
-    'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300',
-  completed:
-    'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
-  on_hold:
-    'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+export const statusTextClass: Record<TaskStatus, string> = {
+  not_started: 'text-status-todo',
+  in_progress: 'text-status-live',
+  completed: 'text-status-done',
+  on_hold: 'text-status-hold',
 }
+
+export const statusClasses = statusTextClass

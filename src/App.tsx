@@ -1,5 +1,4 @@
 import { Route, Routes } from 'react-router-dom'
-import { AppLayout } from './components/AppLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { LocaleProvider } from './features/i18n/LocaleProvider'
@@ -28,11 +27,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route
-            element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute />}
           >
             <Route index element={<DashboardPage />} />
             <Route path="tasks/new" element={<AddTaskPage />} />

@@ -41,10 +41,29 @@ export type TimelineEvent = TaskEvent & {
   taskTitle: string | null
 }
 
+export type DashboardTask = Pick<
+  Task,
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'progress'
+  | 'category_id'
+  | 'updated_at'
+  | 'client_updated_at'
+>
+
 export type DashboardData = {
   stats: DashboardStats
+  tasks: DashboardTask[]
   events: TimelineEvent[]
   categories: Category[]
+}
+
+const DASHBOARD_STATUS_ORDER: Record<TaskStatus, number> = {
+  in_progress: 0,
+  on_hold: 1,
+  not_started: 2,
+  completed: 3,
 }
 
 const TASK_SELECT = `
@@ -290,12 +309,7 @@ export async function fetchDashboardData(
   if (eventsResult.error) throw eventsResult.error
   if (categoriesResult.error) throw categoriesResult.error
 
-  const tasks = (tasksResult.data ?? []) as Array<
-    Pick<
-      Task,
-      'id' | 'title' | 'status' | 'progress' | 'category_id' | 'updated_at' | 'client_updated_at'
-    >
-  >
+  const tasks = (tasksResult.data ?? []) as DashboardTask[]
 
   const total = tasks.length
   const completed = tasks.filter((task) => task.status === 'completed').length
@@ -321,6 +335,15 @@ export async function fetchDashboardData(
 
   return {
     stats: { total, completed, inProgress, notStarted, onHold, averageProgress },
+    tasks: [...tasks].sort((a, b) => {
+      const statusDiff =
+        DASHBOARD_STATUS_ORDER[a.status] - DASHBOARD_STATUS_ORDER[b.status]
+      if (statusDiff !== 0) return statusDiff
+
+      const aUpdated = new Date(a.client_updated_at ?? a.updated_at).getTime()
+      const bUpdated = new Date(b.client_updated_at ?? b.updated_at).getTime()
+      return bUpdated - aUpdated
+    }),
     events,
     categories: (categoriesResult.data ?? []) as Category[],
   }

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AuthShell, inputClass, primaryButtonClass } from './AuthShell'
+import { AuthShell } from './AuthShell'
 import { useAuth } from './auth-context'
 import { useI18n } from '../i18n/context'
+import { btnPrimary, fieldLine } from '../../lib/ui'
 
 export function ForgotPasswordPage() {
   const { resetPassword } = useAuth()
@@ -31,26 +32,24 @@ export function ForgotPasswordPage() {
     <AuthShell
       title={t('auth.forgotTitle')}
       subtitle={t('auth.forgotSubtitle')}
+      brandLine={t('auth.brandNote')}
     >
       {sent ? (
-        <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-          <p>{t('auth.forgotSent')}</p>
-          <Link
-            className="block w-full rounded-xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-indigo-500"
-            to="/login"
-          >
+        <div className="space-y-3">
+          <p className="text-[12px] text-muted">{t('auth.forgotSent')}</p>
+          <Link className={btnPrimary} to="/login">
             {t('auth.backToLogin')}
           </Link>
         </div>
       ) : (
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium" htmlFor="email">
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <label className="text-[10px] uppercase tracking-[0.16em] text-dim" htmlFor="email">
               {t('auth.email')}
             </label>
             <input
               id="email"
-              className={inputClass}
+              className={fieldLine}
               type="email"
               autoComplete="email"
               required
@@ -59,25 +58,17 @@ export function ForgotPasswordPage() {
             />
           </div>
 
-          {error ? (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">
-              {error}
-            </p>
-          ) : null}
+          {error ? <p className="text-[11px] text-danger">{error}</p> : null}
 
-          <button
-            className={primaryButtonClass}
-            type="submit"
-            disabled={submitting}
-          >
+          <button className={btnPrimary} type="submit" disabled={submitting}>
             {submitting ? t('auth.sending') : t('auth.sendReset')}
           </button>
         </form>
       )}
 
-      <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-5 text-center text-[11px] text-dim">
         <Link
-          className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+          className="text-signal underline-offset-4 transition hover:underline"
           to="/login"
         >
           {t('auth.backToLogin')}

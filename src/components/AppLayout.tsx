@@ -1,10 +1,10 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import {
   LayoutDashboard,
   ListChecks,
   LogOut,
-  PlusCircle,
+  Plus,
   Search,
   Settings,
   WifiOff,
@@ -25,26 +25,32 @@ const navItems: Array<{
   end: boolean
 }> = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard, end: true },
-  { to: '/tasks/new', labelKey: 'nav.addTask', icon: PlusCircle, end: false },
   { to: '/tasks', labelKey: 'nav.tasks', icon: ListChecks, end: true },
   { to: '/search', labelKey: 'nav.search', icon: Search, end: false },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings, end: false },
 ]
 
-const navClass = ({ isActive }: { isActive: boolean }) =>
-  [
-    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
-    isActive
-      ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300'
-      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900',
-  ].join(' ')
+const NAV_BASE =
+  'relative flex min-h-11 items-center gap-3 py-3 pl-[44px] pr-4 text-[10px] font-medium uppercase tracking-[0.16em] transition'
+
+function sectionKey(pathname: string): TranslationKey {
+  if (pathname === '/') return 'nav.dashboard'
+  if (pathname === '/tasks') return 'nav.tasks'
+  if (pathname.startsWith('/tasks/')) return 'nav.addTask'
+  if (pathname.startsWith('/search')) return 'nav.search'
+  if (pathname.startsWith('/settings')) return 'nav.settings'
+  return 'nav.dashboard'
+}
 
 export function AppLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const { t } = useI18n()
   const online = useOnlineStatus()
+  const { pathname } = useLocation()
   const accountCount = listAccounts().length
+  const currentLabel = t(sectionKey(pathname))
+  const initial = user?.email?.charAt(0).toUpperCase() ?? '?'
 
   // Auto-sync when reconnecting
   useEffect(() => {
@@ -69,86 +75,110 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-4 py-6 dark:border-slate-800 dark:bg-slate-900 lg:flex">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-lg font-bold text-white">
-            ✓
+    <div className="min-h-screen bg-ground">
+      <a
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:border focus:border-signal focus:bg-plate focus:px-3 focus:py-2 focus:text-[11px] focus:uppercase focus:tracking-[0.14em] focus:text-ink"
+        href="#main"
+      >
+        {t('nav.skip')}
+      </a>
+
+      {/* Desktop sidebar - visible on md+ (768px+) */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[200px] flex-col border-r border-rule bg-plate md:flex">
+        <div className="flex items-center gap-3 px-5 py-6">
+          <div className="grid h-[34px] w-[34px] shrink-0 place-items-center border border-ink text-[11px] font-semibold tracking-[0.1em]">
+            PT
           </div>
-          <div>
-            <p className="text-sm font-bold leading-tight">{t('app.name')}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-medium leading-tight">
+              {t('app.name')}
+            </p>
+            <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-dim">
               {t('app.tagline')}
             </p>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="relative flex-1 border-t border-rule-soft pt-2">
+          <span
+            aria-hidden
+            className="absolute bottom-0 left-[38px] top-0 w-px bg-rule-soft"
+          />
           {navItems.map((item) => (
             <NavLink
               key={item.to}
-              className={navClass}
+              className={({ isActive }) =>
+                isActive
+                  ? `${NAV_BASE} pl-[56px] text-ink before:absolute before:left-[32px] before:top-1/2 before:h-[2px] before:w-[17px] before:-translate-y-1/2 before:bg-signal before:shadow-[0_0_8px_rgba(244,197,66,0.45)] before:content-[""]`
+                  : `${NAV_BASE} text-dim before:absolute before:left-[32px] before:top-1/2 before:h-px before:w-[9px] before:-translate-y-1/2 before:bg-current before:content-[""] hover:text-muted`
+              }
               end={item.end}
               to={item.to}
             >
-              <item.icon className="h-5 w-5" />
               {t(item.labelKey)}
             </NavLink>
           ))}
         </nav>
 
-        <div className="mt-6 rounded-2xl border border-slate-200 p-3 dark:border-slate-800">
-          <p className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">
-            {user?.email}
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-400">
+        <div className="border-t border-rule px-5 py-4">
+          <p className="truncate text-[12px] text-muted">{user?.email}</p>
+          <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-dim">
             {t('nav.accountsOnDevice', { count: accountCount })}
           </p>
           <button
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="mt-3 inline-flex min-h-11 items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-dim transition hover:text-ink"
             onClick={() => void handleSignOut()}
             type="button"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
             {t('nav.signOut')}
           </button>
         </div>
       </aside>
 
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 lg:px-8">
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              ✓
-            </div>
-            <span className="text-sm font-bold">{t('app.name')}</span>
+      <div className="md:pl-[200px]">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-rule bg-ground/90 px-4 backdrop-blur md:h-16 md:px-6">
+          <div className="flex min-w-0 items-center gap-2.5 md:hidden">
+            <span className="grid h-7 w-7 shrink-0 place-items-center border border-ink text-[9px] font-semibold tracking-[0.06em]">
+              PT
+            </span>
+            <span className="truncate text-[11px] uppercase tracking-[0.16em] text-dim">
+              {currentLabel}
+            </span>
           </div>
-          <p className="hidden text-sm text-slate-500 dark:text-slate-400 lg:block">
-            {t('nav.subtitle')}
+
+          <p className="hidden items-baseline gap-2 text-[11px] uppercase tracking-[0.18em] text-dim md:flex">
+            <span>{t('app.name')}</span>
+            <span aria-hidden className="text-rule">
+              /
+            </span>
+            <span className="text-ink">{currentLabel}</span>
           </p>
-          <div className="flex items-center gap-3">
+
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
             {!online ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+              <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] text-warning">
                 <WifiOff className="h-3.5 w-3.5" />
-                {t('offline.badge')}
+                <span className="hidden sm:inline">{t('offline.badge')}</span>
               </span>
             ) : null}
-            <span className="hidden max-w-[14rem] truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300 sm:block">
-              {user?.email}
-            </span>
+            {user ? <SyncStatus /> : null}
             <NavLink
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white"
+              aria-label={t('nav.settings')}
+              className="grid h-9 w-9 place-items-center border border-rule text-[12px] font-medium text-ink transition hover:border-ink"
               to="/settings"
             >
-              {user?.email?.charAt(0).toUpperCase() ?? '?'}
+              {initial}
             </NavLink>
-            {user ? <SyncStatus /> : null}
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 pb-28 lg:px-8 lg:pb-10">
+        <main
+          className="mx-auto w-full max-w-5xl px-4 pb-28 pt-5 md:px-6 md:pb-10 md:pt-6"
+          id="main"
+        >
           {!online ? (
-            <div className="mb-4 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+            <div className="mb-5 flex items-start gap-2 border-l border-warning bg-warning/10 px-3 py-2 text-[12px] text-warning">
               <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
               {t('offline.banner')}
             </div>
@@ -157,23 +187,44 @@ export function AppLayout() {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden">
+      {/* Mobile FAB - visible below md */}
+      <NavLink
+        aria-label={t('nav.addTask')}
+        className="fixed bottom-[72px] right-4 z-30 grid h-12 w-12 place-items-center bg-action text-action-ink transition active:scale-95 md:hidden"
+        to="/tasks/new"
+      >
+        <Plus className="h-5 w-5" strokeWidth={1.8} />
+      </NavLink>
+
+      {/* Mobile bottom nav - visible below md */}
+      <nav
+        aria-label={t('app.name')}
+        className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-rule bg-ground/95 pb-[max(8px,env(safe-area-inset-bottom))] backdrop-blur md:hidden"
+      >
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             className={({ isActive }) =>
               [
-                'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition',
-                isActive
-                  ? 'text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-500 dark:text-slate-400',
+                'relative flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 text-[10px] font-medium uppercase tracking-[0.1em] transition',
+                isActive ? 'text-ink' : 'text-dim',
               ].join(' ')
             }
             end={item.end}
             to={item.to}
           >
-            <item.icon className="h-5 w-5" />
-            {t(item.labelKey)}
+            {({ isActive }) => (
+              <>
+                <item.icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
+                <span className="leading-none">{t(item.labelKey)}</span>
+                {isActive ? (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 top-0 mx-auto h-px w-7 bg-signal"
+                  />
+                ) : null}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

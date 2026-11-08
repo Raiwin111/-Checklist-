@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 
-if (localStorage.getItem('ptrs.theme') === 'dark') {
+if (localStorage.getItem('ptrs.theme') !== 'light') {
   document.documentElement.classList.add('dark')
 }
 

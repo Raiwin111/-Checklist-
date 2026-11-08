@@ -1,7 +1,7 @@
 import { useState, type InputHTMLAttributes } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { useI18n } from '../i18n/context'
-import { inputClass } from './AuthShell'
+import { fieldLine } from '../../lib/ui'
 
 type PasswordInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>
 
@@ -14,13 +14,13 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
     <div className="relative">
       <input
         {...props}
-        className={[inputClass, 'pr-12', className].filter(Boolean).join(' ')}
+        className={[fieldLine, 'pr-12', className].filter(Boolean).join(' ')}
         type={visible ? 'text' : 'password'}
       />
       <button
         aria-label={label}
         aria-pressed={visible}
-        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-slate-400 transition hover:text-slate-600 focus-visible:text-indigo-600 focus-visible:outline-none dark:hover:text-slate-200"
+        className="absolute inset-y-0 right-0 flex h-9 w-9 items-center justify-center text-dim transition hover:text-ink"
         onClick={() => setVisible((value) => !value)}
         title={label}
         type="button"
